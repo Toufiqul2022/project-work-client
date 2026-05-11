@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -20,6 +20,7 @@ const LockIcon = () => (
     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
   </svg>
 );
+
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
     <path
@@ -46,10 +47,34 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [errors, setErrors] = useState({}); // Added for validation
   const router = useRouter();
+
+  const validateForm = () => {
+    let newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email) {
+      newErrors.email = "Email is required";
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) return;
+
     setLoading(true);
     // Simulation
     setTimeout(() => {
@@ -59,7 +84,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0a12] flex items-center justify-center p-6 relative overflow-hidden font-sans">
+    <main className="min-h-screen bg-[#0a0a12] flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
       {/* --- Background Decorative Elements --- */}
       <div className="fixed inset-0 pointer-events-none opacity-20 bg-[radial-gradient(circle_at_20%_20%,#633cff_0%,transparent_50%),radial-gradient(circle_at_80%_80%,#00c896_0%,transparent_50%)]"></div>
 
@@ -68,9 +93,9 @@ export default function LoginPage() {
       <div className="fixed -bottom-20 -left-20 w-64 h-64 rounded-full bg-gradient-to-br from-pink-600 to-purple-600 opacity-10 animate-bounce blur-3xl"></div>
 
       {/* --- Main Card Container --- */}
-      <div className="relative z-10 w-full max-w-[820px] min-h-[540px] flex rounded-[24px] border border-white/10 bg-[#0a0a12]/60 backdrop-blur-[24px] shadow-2xl overflow-hidden animate-[lp-card-rise_0.7s_ease-out]">
+      <div className="relative z-10 w-full max-w-[820px] min-h-[540px] flex flex-col md:flex-row rounded-[24px] border border-white/10 bg-[#0a0a12]/60 backdrop-blur-[24px] shadow-2xl overflow-hidden animate-[lp-card-rise_0.7s_ease-out]">
         {/* Left Side: Login Form */}
-        <div className="w-full md:w-1/2 p-10 flex flex-col justify-center">
+        <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center">
           <div className="relative mb-8">
             <div className="absolute -top-10 right-0 flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/40 bg-purple-500/10 text-[11px] font-medium text-purple-300">
               <LockIcon /> Secure login
@@ -78,12 +103,12 @@ export default function LoginPage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
               Account Access
             </p>
-            <h1 className="text-4xl font-extrabold text-white leading-tight">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-white leading-tight">
               Welcome <br /> <span className="text-purple-500">back.</span>
             </h1>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
                 Email Address
@@ -91,11 +116,18 @@ export default function LoginPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-purple-500/70 focus:bg-purple-500/5 transition-all placeholder:text-white/20"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors({ ...errors, email: "" });
+                }}
+                className={`w-full h-12 px-4 rounded-xl bg-white/5 border ${errors.email ? "border-red-500/50" : "border-white/10"} text-white outline-none focus:border-purple-500/70 focus:bg-purple-500/5 transition-all placeholder:text-white/20`}
                 placeholder="you@example.com"
-                required
               />
+              {errors.email && (
+                <p className="text-[10px] text-red-400 mt-1 ml-1">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -106,19 +138,26 @@ export default function LoginPage() {
                 <input
                   type={showPass ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-purple-500/70 focus:bg-purple-500/5 transition-all placeholder:text-white/20"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) setErrors({ ...errors, password: "" });
+                  }}
+                  className={`w-full h-12 px-4 rounded-xl bg-white/5 border ${errors.password ? "border-red-500/50" : "border-white/10"} text-white outline-none focus:border-purple-500/70 focus:bg-purple-500/5 transition-all placeholder:text-white/20`}
                   placeholder="••••••••"
-                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors text-xs font-bold"
                 >
-                  {showPass ? "Hide" : "Show"}
+                  {showPass ? "HIDE" : "SHOW"}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-[10px] text-red-400 mt-1 ml-1">
+                  {errors.password}
+                </p>
+              )}
               <div className="mt-2 flex justify-end">
                 <Link
                   href="#"
@@ -134,26 +173,41 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full h-12 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl text-white font-bold tracking-wider hover:opacity-90 hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
             >
-              {loading ? "AUTHENTICATING..." : "CONTINUE →"}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  AUTHENTICATING...
+                </span>
+              ) : (
+                "CONTINUE →"
+              )}
             </button>
           </form>
 
           {/* Social Logins */}
-          <div className="mt-8">
-            <div className="flex items-center gap-3 mb-6 text-[10px] uppercase font-bold text-white/20">
+          <div className="mt-6 md:mt-8">
+            <div className="flex items-center gap-3 mb-4 md:mb-6 text-[10px] uppercase font-bold text-white/20">
               <div className="h-px flex-1 bg-white/10"></div>
               <span>OR CONTINUE WITH</span>
               <div className="h-px flex-1 bg-white/10"></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <button className="h-11 flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm hover:bg-white/10 hover:text-white transition-all">
-                <GoogleIcon /> Google
+                <GoogleIcon /> <span className="hidden sm:inline">Google</span>
               </button>
               <button className="h-11 flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm hover:bg-white/10 hover:text-white transition-all">
                 GitHub
               </button>
             </div>
           </div>
+
+          {/* Mobile Register Link (Only visible on small screens) */}
+          <p className="md:hidden mt-8 text-center text-sm text-white/40">
+            Don't have an account?{" "}
+            <Link href="/auth/register" className="text-purple-400 font-bold">
+              Sign Up
+            </Link>
+          </p>
         </div>
 
         {/* Right Side: Animated Overlay Panel (Hidden on Mobile) */}
@@ -162,7 +216,7 @@ export default function LoginPage() {
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full border border-white/10"></div>
           <div className="absolute bottom-20 left-10 w-20 h-20 rounded-full bg-white/5"></div>
 
-          <div className="relative z-10 space-y-4">
+          <div className="relative z-10 space-y-4 animate-[lp-card-rise_1s_ease-out]">
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
               New here?
             </p>
@@ -175,7 +229,7 @@ export default function LoginPage() {
             </p>
             <Link
               href="/auth/register"
-              className="mt-8 inline-block px-10 py-3 rounded-full border-2 border-white/70 text-white text-xs font-bold tracking-widest hover:bg-white/10 transition-all uppercase"
+              className="mt-8 inline-block px-10 py-3 rounded-full border-2 border-white/70 text-white text-xs font-bold tracking-widest hover:bg-white hover:text-purple-900 transition-all uppercase"
             >
               Sign Up
             </Link>
