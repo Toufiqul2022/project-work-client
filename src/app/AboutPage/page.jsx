@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+// ─── ICON ─────────────────────────────────────────────────────────────────────
 const Icon = ({ d, size = 24, color = "currentColor" }) => (
   <svg
     width={size}
@@ -18,33 +19,34 @@ const Icon = ({ d, size = 24, color = "currentColor" }) => (
   </svg>
 );
 
+// ─── DATA ─────────────────────────────────────────────────────────────────────
 const team = [
   {
-    name: "Rahim Uddin",
-    role: "Lead Engineer & Project Head",
+    name: "Md. Toufiqul Islam",
+    role: "Team Leader & Lead Engineer",
     emoji: "👨‍💻",
-    desc: "Full-stack engineer specializing in IoT systems and real-time data pipelines. Leads the hardware-software integration for the SafeGuard wearable.",
+    desc: "Full-stack engineer and project head specializing in IoT systems and real-time data pipelines. Leads hardware-software integration for the SafeGuard wearable.",
   },
   {
-    name: "Fatema Begum",
+    name: "Ariful Islam",
     role: "IoT Hardware Engineer",
     emoji: "🔧",
     desc: "Expert in embedded systems and sensor design. Responsible for the GPS, heart-rate, and temperature modules integrated into the SafeGuard device.",
   },
   {
-    name: "Karim Hossain",
+    name: "Mahmudul Hasan",
     role: "Backend & API Developer",
     emoji: "🖥️",
     desc: "Designs the scalable cloud backend powering real-time alerts, geofencing logic, and the multi-contact SOS notification system.",
   },
   {
-    name: "Nadia Islam",
+    name: "Jobaydul Alam Riyan",
     role: "Frontend & UX Developer",
     emoji: "🎨",
     desc: "Creates the parent dashboard and mobile-responsive UI. Focused on clarity, speed, and accessibility in every interaction.",
   },
   {
-    name: "Sabbir Ahmed",
+    name: "Md. Junayet Al Habib",
     role: "AI & Data Analyst",
     emoji: "🤖",
     desc: "Builds the anomaly-detection models that power the anti-kidnapping feature, analyzing movement patterns and triggering smart alerts.",
@@ -56,25 +58,29 @@ const values = [
     icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
     title: "Child Safety First",
     desc: "Every decision we make is filtered through one question: does this keep children safer?",
-    color: "#22C55E",
+    color: "text-green-400",
+    bg: "bg-green-400/10 border-green-400/20",
   },
   {
     icon: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 100 6 3 3 0 000-6z",
     title: "Radical Transparency",
     desc: "We tell parents exactly what data we collect, how it's used, and who can access it.",
-    color: "#60A5FA",
+    color: "text-blue-400",
+    bg: "bg-blue-400/10 border-blue-400/20",
   },
   {
     icon: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 8v4l3 3",
     title: "Always On",
     desc: "Our infrastructure is built for 99.9% uptime. When a child needs help, milliseconds matter.",
-    color: "#A78BFA",
+    color: "text-violet-400",
+    bg: "bg-violet-400/10 border-violet-400/20",
   },
   {
     icon: "M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 11a4 4 0 100-8 4 4 0 000 8z",
     title: "Family-Centered Design",
     desc: "SafeGuard is built with and for families. Real parents shaped every feature on this platform.",
-    color: "#FBBF24",
+    color: "text-amber-400",
+    bg: "bg-amber-400/10 border-amber-400/20",
   },
 ];
 
@@ -106,71 +112,44 @@ const timeline = [
   },
 ];
 
+// ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function AboutPage() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#0a0a12",
-        color: "#E2E8F0",
-        fontFamily: "'DM Sans', system-ui, sans-serif",
-        overflowX: "hidden",
-      }}
-    >
-      {/* Background */}
+    <main className="relative min-h-screen bg-[#0a0a12] text-slate-200 font-sans overflow-x-hidden">
+      {/* Background radial glow */}
       <div
+        className="fixed inset-0 pointer-events-none opacity-[0.12] z-0"
         style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          opacity: 0.12,
           background:
             "radial-gradient(circle at 70% 10%, #6D28D9 0%, transparent 50%), radial-gradient(circle at 10% 90%, #0ea5e9 0%, transparent 50%)",
-          zIndex: 0,
         }}
       />
 
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <div className="relative z-10">
         {/* ── HERO ── */}
-        <section
-          style={{
-            textAlign: "center",
-            padding: "80px 24px 70px",
-            maxWidth: 760,
-            margin: "0 auto",
-          }}
-        >
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "6px 16px",
-              borderRadius: 20,
-              background: "rgba(109,40,217,0.12)",
-              border: "1px solid rgba(109,40,217,0.3)",
-              fontSize: 11,
-              fontWeight: 800,
-              color: "#A78BFA",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              marginBottom: 28,
-            }}
-          >
+        <section className="text-center px-5 sm:px-8 pt-16 sm:pt-20 pb-14 max-w-[760px] mx-auto">
+          {/* Institute badge */}
+          <div className="inline-flex flex-wrap justify-center items-center gap-1.5 px-4 py-2 rounded-2xl bg-violet-700/10 border border-violet-600/30 text-[11px] font-extrabold text-violet-400 uppercase tracking-[0.1em] mb-3">
+            <Icon
+              d="M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5"
+              size={11}
+            />
+            Brahmanbaria Polytechnic Institute · CST Department
+          </div>
+
+          {/* Eyebrow */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-700/10 border border-violet-600/30 text-[11px] font-extrabold text-violet-400 uppercase tracking-[0.12em] mb-7 mt-2">
             <Icon
               d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 11a4 4 0 100-8 4 4 0 000 8z M23 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75"
               size={12}
-              color="#A78BFA"
             />
             About SafeGuard
           </div>
+
+          {/* Headline */}
           <h1
+            className="text-[clamp(2rem,5vw,3.5rem)] font-black leading-[1.1] tracking-tight mb-5"
             style={{
-              fontSize: "clamp(2rem, 5vw, 3.5rem)",
-              fontWeight: 900,
-              lineHeight: 1.1,
-              letterSpacing: "-0.03em",
-              margin: "0 0 20px",
               background:
                 "linear-gradient(135deg, #ffffff 0%, #A78BFA 60%, #60A5FA 100%)",
               WebkitBackgroundClip: "text",
@@ -179,17 +158,11 @@ export default function AboutPage() {
             }}
           >
             Built by engineers who
-            <br />
-            believe every child deserves safety
+            <br className="hidden sm:block" /> believe every child deserves
+            safety
           </h1>
-          <p
-            style={{
-              fontSize: "clamp(0.95rem, 2vw, 1.1rem)",
-              color: "#6B7280",
-              lineHeight: 1.75,
-              margin: 0,
-            }}
-          >
+
+          <p className="text-[clamp(0.95rem,2vw,1.1rem)] text-gray-500 leading-[1.75]">
             SafeGuard is a student-led IoT child-safety project from Bangladesh,
             combining wearable hardware, cloud infrastructure, and AI to give
             parents real-time peace of mind. What started as a university
@@ -199,40 +172,19 @@ export default function AboutPage() {
         </section>
 
         {/* ── MISSION ── */}
-        <section
-          style={{ maxWidth: 1100, margin: "0 auto 80px", padding: "0 24px" }}
-        >
+        <section className="max-w-[1100px] mx-auto px-5 sm:px-8 mb-16 sm:mb-20">
           <div
+            className="rounded-3xl border border-violet-600/25 p-8 sm:p-12 text-center"
             style={{
               background:
                 "linear-gradient(135deg, rgba(109,40,217,0.12), rgba(37,99,235,0.08))",
-              border: "1px solid rgba(109,40,217,0.25)",
-              borderRadius: 24,
-              padding: "48px",
-              textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 40, marginBottom: 16 }}>🛡️</div>
-            <h2
-              style={{
-                fontSize: 26,
-                fontWeight: 900,
-                color: "#E2E8F0",
-                margin: "0 0 16px",
-                letterSpacing: "-0.02em",
-              }}
-            >
+            <div className="text-4xl mb-4">🛡️</div>
+            <h2 className="text-2xl sm:text-[26px] font-black text-slate-200 tracking-tight mb-4">
               Our Mission
             </h2>
-            <p
-              style={{
-                fontSize: 16,
-                color: "#9CA3AF",
-                lineHeight: 1.75,
-                maxWidth: 620,
-                margin: "0 auto",
-              }}
-            >
+            <p className="text-[15px] sm:text-base text-gray-400 leading-[1.75] max-w-[620px] mx-auto">
               To make advanced child-safety technology accessible to every
               family in Bangladesh and beyond — regardless of income or
               technical background — through affordable hardware and an
@@ -242,72 +194,30 @@ export default function AboutPage() {
         </section>
 
         {/* ── VALUES ── */}
-        <section
-          style={{ maxWidth: 1100, margin: "0 auto 80px", padding: "0 24px" }}
-        >
-          <h2
-            style={{
-              textAlign: "center",
-              fontSize: 26,
-              fontWeight: 900,
-              color: "#E2E8F0",
-              marginBottom: 40,
-              letterSpacing: "-0.02em",
-            }}
-          >
+        <section className="max-w-[1100px] mx-auto px-5 sm:px-8 mb-16 sm:mb-20">
+          <h2 className="text-center text-2xl sm:text-[26px] font-black text-slate-200 tracking-tight mb-10">
             Our Core Values
           </h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-              gap: 16,
-            }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {values.map((v) => (
               <div
                 key={v.title}
-                style={{
-                  background: "rgba(255,255,255,0.025)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 18,
-                  padding: "28px 24px",
-                  textAlign: "center",
-                }}
+                className="bg-white/[0.025] border border-white/[0.07] rounded-[18px] p-6 sm:p-7 text-center"
               >
                 <div
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 16,
-                    background: v.color + "15",
-                    border: `1px solid ${v.color}30`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 16px",
-                  }}
+                  className={`w-13 h-13 rounded-2xl border flex items-center justify-center mx-auto mb-4 ${v.bg}`}
                 >
-                  <Icon d={v.icon} size={22} color={v.color} />
+                  <Icon
+                    d={v.icon}
+                    size={22}
+                    color="currentColor"
+                    className={v.color}
+                  />
                 </div>
-                <h3
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 800,
-                    color: "#E2E8F0",
-                    margin: "0 0 8px",
-                  }}
-                >
+                <h3 className="text-[15px] font-extrabold text-slate-200 mb-2">
                   {v.title}
                 </h3>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: "#6B7280",
-                    lineHeight: 1.65,
-                    margin: 0,
-                  }}
-                >
+                <p className="text-[13px] text-gray-500 leading-relaxed">
                   {v.desc}
                 </p>
               </div>
@@ -316,91 +226,42 @@ export default function AboutPage() {
         </section>
 
         {/* ── TIMELINE ── */}
-        <section
-          style={{ maxWidth: 800, margin: "0 auto 80px", padding: "0 24px" }}
-        >
-          <h2
-            style={{
-              textAlign: "center",
-              fontSize: 26,
-              fontWeight: 900,
-              color: "#E2E8F0",
-              marginBottom: 48,
-              letterSpacing: "-0.02em",
-            }}
-          >
+        <section className="max-w-[800px] mx-auto px-5 sm:px-8 mb-16 sm:mb-20">
+          <h2 className="text-center text-2xl sm:text-[26px] font-black text-slate-200 tracking-tight mb-12">
             Our Journey
           </h2>
-          <div style={{ position: "relative" }}>
-            {/* vertical line */}
+
+          <div className="relative">
+            {/* Vertical line — hidden on very small screens, shown sm+ */}
             <div
+              className="hidden sm:block absolute left-6 top-0 bottom-0 w-0.5 rounded-full opacity-30"
               style={{
-                position: "absolute",
-                left: 23,
-                top: 0,
-                bottom: 0,
-                width: 2,
                 background: "linear-gradient(to bottom, #6D28D9, #2563EB)",
-                opacity: 0.3,
-                borderRadius: 2,
               }}
             />
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+            <div className="flex flex-col gap-8">
               {timeline.map((t, i) => (
-                <div
-                  key={t.year}
-                  style={{ display: "flex", gap: 24, alignItems: "flex-start" }}
-                >
+                <div key={t.year} className="flex gap-5 sm:gap-6 items-start">
+                  {/* Step bubble */}
                   <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white shrink-0 z-10 shadow-[0_0_16px_rgba(109,40,217,0.4)]"
                     style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
                       background: "linear-gradient(135deg, #6D28D9, #2563EB)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 10,
-                      fontWeight: 800,
-                      color: "white",
-                      flexShrink: 0,
-                      boxShadow: "0 0 16px rgba(109,40,217,0.4)",
-                      zIndex: 1,
                     }}
                   >
                     {String(i + 1).padStart(2, "0")}
                   </div>
-                  <div style={{ paddingTop: 10 }}>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 800,
-                        color: "#A78BFA",
-                        letterSpacing: "0.08em",
-                        marginBottom: 4,
-                      }}
-                    >
+
+                  {/* Content */}
+                  <div className="pt-2.5">
+                    <p className="text-[11px] font-extrabold text-violet-400 tracking-[0.08em] mb-1">
                       {t.year}
-                    </div>
-                    <h3
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 800,
-                        color: "#E2E8F0",
-                        margin: "0 0 6px",
-                      }}
-                    >
+                    </p>
+                    <h3 className="text-base font-extrabold text-slate-200 mb-1.5">
                       {t.title}
                     </h3>
-                    <p
-                      style={{
-                        fontSize: 13.5,
-                        color: "#6B7280",
-                        lineHeight: 1.65,
-                        margin: 0,
-                      }}
-                    >
+                    <p className="text-[13.5px] text-gray-500 leading-relaxed">
                       {t.desc}
                     </p>
                   </div>
@@ -411,179 +272,81 @@ export default function AboutPage() {
         </section>
 
         {/* ── TEAM ── */}
-        <section
-          style={{ maxWidth: 1100, margin: "0 auto 80px", padding: "0 24px" }}
-        >
-          <h2
-            style={{
-              textAlign: "center",
-              fontSize: 26,
-              fontWeight: 900,
-              color: "#E2E8F0",
-              marginBottom: 12,
-              letterSpacing: "-0.02em",
-            }}
-          >
+        <section className="max-w-[1100px] mx-auto px-5 sm:px-8 mb-16 sm:mb-20">
+          <h2 className="text-center text-2xl sm:text-[26px] font-black text-slate-200 tracking-tight mb-2">
             Meet the Team
           </h2>
-          <p
-            style={{
-              textAlign: "center",
-              fontSize: 14,
-              color: "#6B7280",
-              marginBottom: 40,
-            }}
-          >
+          <p className="text-center text-sm text-gray-500 mb-10">
             A multidisciplinary team of engineers, designers, and researchers
-            from Bangladesh.
+            from Brahmanbaria Polytechnic Institute, Computer Science &amp;
+            Technology.
           </p>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-              gap: 16,
-            }}
-          >
-            {team.map((m) => (
+
+          {/* 5 cards: 1 col → 2 col → first row 3, last row 2 centred */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {team.map((m, i) => (
               <div
                 key={m.name}
-                style={{
-                  background: "rgba(255,255,255,0.025)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 18,
-                  padding: "24px",
-                }}
+                className={`
+                  bg-white/[0.025] border border-white/[0.07] rounded-[18px] p-5 sm:p-6
+                  ${/* Centre the last 2 cards on lg grid */ ""}
+                  ${i >= 3 ? "lg:col-start-auto" : ""}
+                `}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    marginBottom: 14,
-                  }}
-                >
+                <div className="flex items-center gap-3.5 mb-3.5">
+                  {/* Avatar */}
                   <div
+                    className="w-[52px] h-[52px] rounded-2xl border border-violet-600/30 flex items-center justify-center text-[22px] shrink-0"
                     style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 16,
                       background:
                         "linear-gradient(135deg, rgba(109,40,217,0.25), rgba(37,99,235,0.25))",
-                      border: "1px solid rgba(109,40,217,0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 22,
-                      flexShrink: 0,
                     }}
                   >
                     {m.emoji}
                   </div>
                   <div>
-                    <div
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 800,
-                        color: "#E2E8F0",
-                      }}
-                    >
+                    <p className="text-[15px] font-extrabold text-slate-200 leading-snug">
                       {m.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "#A78BFA",
-                        fontWeight: 600,
-                        marginTop: 2,
-                      }}
-                    >
+                    </p>
+                    <p className="text-[11px] text-violet-400 font-semibold mt-0.5">
                       {m.role}
-                    </div>
+                    </p>
                   </div>
                 </div>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: "#6B7280",
-                    lineHeight: 1.65,
-                    margin: 0,
-                  }}
-                >
+                <p className="text-[13px] text-gray-500 leading-relaxed">
                   {m.desc}
                 </p>
               </div>
             ))}
+
+            {/* Invisible spacer to push last 2 cards to centre on lg */}
+            <div className="hidden lg:block" aria-hidden="true" />
           </div>
         </section>
 
         {/* ── CTA ── */}
-        <section style={{ textAlign: "center", padding: "0 24px 100px" }}>
-          <div
-            style={{
-              background: "rgba(255,255,255,0.025)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 24,
-              padding: "48px 24px",
-              maxWidth: 560,
-              margin: "0 auto",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: 22,
-                fontWeight: 900,
-                color: "#E2E8F0",
-                margin: "0 0 12px",
-              }}
-            >
+        <section className="px-5 sm:px-8 pb-24">
+          <div className="bg-white/[0.025] border border-white/[0.07] rounded-3xl p-8 sm:p-12 max-w-[560px] mx-auto text-center">
+            <h2 className="text-xl sm:text-[22px] font-black text-slate-200 tracking-tight mb-3">
               Want to collaborate?
             </h2>
-            <p
-              style={{
-                fontSize: 14,
-                color: "#6B7280",
-                margin: "0 0 28px",
-                lineHeight: 1.7,
-              }}
-            >
+            <p className="text-sm text-gray-500 leading-[1.7] mb-7">
               Whether you're a parent, researcher, investor, or fellow engineer
               — we'd love to connect.
             </p>
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                justifyContent: "center",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className="flex flex-wrap justify-center gap-3">
               <Link
                 href="/contact"
+                className="px-7 py-3 rounded-xl text-sm font-bold text-white no-underline shadow-[0_0_20px_rgba(109,40,217,0.3)] hover:shadow-[0_0_28px_rgba(109,40,217,0.45)] hover:brightness-110 transition-all duration-150"
                 style={{
-                  padding: "12px 28px",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "white",
-                  textDecoration: "none",
                   background: "linear-gradient(135deg, #6D28D9, #2563EB)",
-                  boxShadow: "0 0 20px rgba(109,40,217,0.3)",
                 }}
               >
                 Get in Touch
               </Link>
               <Link
                 href="/features"
-                style={{
-                  padding: "12px 28px",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "#A78BFA",
-                  textDecoration: "none",
-                  background: "rgba(109,40,217,0.1)",
-                  border: "1px solid rgba(109,40,217,0.3)",
-                }}
+                className="px-7 py-3 rounded-xl text-sm font-bold text-violet-400 no-underline bg-violet-700/10 border border-violet-600/30 hover:bg-violet-700/20 hover:border-violet-500/40 transition-all duration-150"
               >
                 Explore Features
               </Link>

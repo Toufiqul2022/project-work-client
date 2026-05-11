@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
 const MOCK = {
@@ -77,6 +77,7 @@ const Icon = ({
     strokeWidth={stroke}
     strokeLinecap="round"
     strokeLinejoin="round"
+    className="shrink-0"
   >
     <path d={d} />
   </svg>
@@ -101,7 +102,62 @@ const Icons = {
   close: "M18 6L6 18 M6 6l12 12",
 };
 
-// ─── SPARKLINE ────────────────────────────────────────────────────────────────
+// ─── REUSABLE UI COMPONENTS ───────────────────────────────────────────────────
+
+const Card = ({ children, className = "", title }) => (
+  <div
+    className={`bg-[#0D1117] border border-white/5 rounded-2xl p-4 md:p-5 mb-4 ${className}`}
+  >
+    {title && (
+      <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
+        {title}
+      </div>
+    )}
+    {children}
+  </div>
+);
+
+const Badge = ({ children, color }) => (
+  <span
+    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-bold border whitespace-nowrap"
+    style={{
+      backgroundColor: `${color}15`,
+      borderColor: `${color}30`,
+      color: color,
+    }}
+  >
+    {children}
+  </span>
+);
+
+const ActionBtn = ({ children, color, className = "", onClick }) => (
+  <button
+    onClick={onClick}
+    className={`px-3 py-2 md:px-4 md:py-2 rounded-xl text-white font-bold text-[10px] md:text-xs transition-colors hover:brightness-110 flex-shrink-0 ${className}`}
+    style={{ backgroundColor: color }}
+  >
+    {children}
+  </button>
+);
+
+const ListItem = ({ label, value, badge, border = true }) => (
+  <div
+    className={`flex items-center justify-between py-3 ${border ? "border-b border-white/5" : ""}`}
+  >
+    <span className="text-[11px] md:text-xs text-gray-400">{label}</span>
+    <div className="flex items-center gap-2">
+      {value && (
+        <span className="text-[11px] md:text-xs font-semibold text-slate-200">
+          {value}
+        </span>
+      )}
+      {badge && <Badge color={badge.color}>{badge.label}</Badge>}
+    </div>
+  </div>
+);
+
+// ─── DATA VISUALIZATIONS ──────────────────────────────────────────────────────
+
 function Sparkline({ data, color = "#22C55E", h = 40 }) {
   const max = Math.max(...data),
     min = Math.min(...data);
@@ -115,7 +171,8 @@ function Sparkline({ data, color = "#22C55E", h = 40 }) {
   return (
     <svg
       viewBox={`0 0 100 ${h}`}
-      style={{ width: "100%", height: h }}
+      className="w-full"
+      style={{ height: h }}
       preserveAspectRatio="none"
     >
       <defs>
@@ -142,7 +199,6 @@ function Sparkline({ data, color = "#22C55E", h = 40 }) {
   );
 }
 
-// ─── RING GAUGE ───────────────────────────────────────────────────────────────
 function RingGauge({
   value,
   max = 100,
@@ -155,14 +211,7 @@ function RingGauge({
     c = 2 * Math.PI * r;
   const dash = (value / max) * c;
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 6,
-      }}
-    >
+    <div className="flex flex-col items-center gap-1.5 p-2">
       <svg width={size} height={size} viewBox="0 0 72 72">
         <circle
           cx="36"
@@ -182,7 +231,7 @@ function RingGauge({
           strokeDasharray={`${dash} ${c}`}
           strokeLinecap="round"
           transform="rotate(-90 36 36)"
-          style={{ transition: "stroke-dasharray 1s ease" }}
+          className="transition-all duration-1000 ease-out"
         />
         <text
           x="36"
@@ -196,34 +245,23 @@ function RingGauge({
         </text>
       </svg>
       {label && (
-        <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600 }}>
-          {label}
-        </span>
+        <span className="text-[11px] text-gray-400 font-semibold">{label}</span>
       )}
       {sublabel && (
-        <span style={{ fontSize: 10, color: "#6B7280" }}>{sublabel}</span>
+        <span className="text-[10px] text-gray-500 text-center">
+          {sublabel}
+        </span>
       )}
     </div>
   );
 }
 
-// ─── FAKE MAP ─────────────────────────────────────────────────────────────────
-function FakeMap({ height = 220 }) {
+function FakeMap({ className = "h-40 md:h-[220px]" }) {
   return (
     <div
-      style={{
-        position: "relative",
-        height,
-        borderRadius: 14,
-        overflow: "hidden",
-        background: "#060D1A",
-      }}
+      className={`relative w-full rounded-xl overflow-hidden bg-[#060D1A] ${className}`}
     >
-      <svg
-        width="100%"
-        height="100%"
-        style={{ position: "absolute", inset: 0 }}
-      >
+      <svg width="100%" height="100%" className="absolute inset-0">
         {[...Array(16)].map((_, i) => (
           <line
             key={`v${i}`}
@@ -282,82 +320,32 @@ function FakeMap({ height = 220 }) {
           Mirpur 10
         </text>
       </svg>
-      <div
-        style={{
-          position: "absolute",
-          top: 10,
-          right: 10,
-          background: "#00000080",
-          backdropFilter: "blur(8px)",
-          border: "1px solid #22C55E40",
-          borderRadius: 8,
-          padding: "4px 10px",
-          fontSize: 10,
-          color: "#22C55E",
-          fontWeight: 700,
-        }}
-      >
+      <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-black/50 backdrop-blur-md border border-green-500/30 rounded-lg px-2.5 py-1 text-[9px] md:text-[10px] text-green-500 font-bold">
         🟢 LIVE
       </div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 10,
-          left: 10,
-          background: "#00000080",
-          backdropFilter: "blur(8px)",
-          border: "1px solid #ffffff15",
-          borderRadius: 8,
-          padding: "4px 10px",
-          fontSize: 10,
-          color: "#94A3B8",
-        }}
-      >
+      <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-black/50 backdrop-blur-md border border-white/10 rounded-lg px-2.5 py-1 text-[9px] md:text-[10px] text-slate-400">
         23.8103°N · 90.4125°E
       </div>
     </div>
   );
 }
 
-// ─── COMPONENTS ───────────────────────────────────────────────────────────────
+// ─── PAGES ────────────────────────────────────────────────────────────────────
 
 function OverviewPage({ bpm, sosActive, setSosActive }) {
-  const S = styles;
   return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 800,
-            letterSpacing: "-0.04em",
-            margin: 0,
-            color: "#F1F5F9",
-          }}
-        >
+    <div className="animate-in fade-in duration-300">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-slate-100 m-0">
           Child Safety & Anti-Kidnapping System
         </h1>
-        <p
-          style={{
-            fontSize: 12,
-            color: "#64748B",
-            marginTop: 6,
-            margin: "6px 0 0",
-          }}
-        >
+        <p className="text-xs md:text-sm text-slate-500 mt-2">
           IoT ভিত্তিক সুরক্ষা সিস্টেম — Real-time Tracking & Smart Alerts
         </p>
       </div>
 
       {/* Status Row */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: 12,
-          marginBottom: 14,
-        }}
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4">
         {[
           {
             label: "Device Status",
@@ -381,15 +369,28 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
             icon: "📡",
           },
         ].map((s) => (
-          <div key={s.label} style={S.statCard(s.color)}>
-            <div style={{ fontSize: 20, marginBottom: 6 }}>{s.icon}</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>
+          <div
+            key={s.label}
+            className="bg-[#0D1117] rounded-2xl p-4 md:p-5 border-t-2"
+            style={{
+              borderColor: s.color,
+              borderLeftColor: `${s.color}18`,
+              borderRightColor: `${s.color}18`,
+              borderBottomColor: `${s.color}18`,
+              borderWidth: "2px 1px 1px 1px",
+            }}
+          >
+            <div className="text-lg md:text-xl mb-1.5">{s.icon}</div>
+            <div
+              className="text-lg md:text-xl font-extrabold"
+              style={{ color: s.color }}
+            >
               {s.value}
             </div>
-            <div style={{ fontSize: 10, color: "#94A3B8", marginTop: 3 }}>
+            <div className="text-[10px] md:text-xs text-slate-400 mt-1">
               {s.label}
             </div>
-            <div style={{ fontSize: 9, color: "#475569", marginTop: 2 }}>
+            <div className="text-[9px] md:text-[10px] text-slate-500 mt-0.5">
               {s.sub}
             </div>
           </div>
@@ -397,44 +398,24 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
       </div>
 
       {/* Map + Heart Rate */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 14,
-          marginBottom: 14,
-        }}
-      >
-        <div style={S.card}>
-          <div style={S.cardTitle}>📍 Live Location</div>
-          <FakeMap height={165} />
-          <div style={{ marginTop: 8, fontSize: 11, color: "#9CA3AF" }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <Card title="📍 Live Location">
+          <FakeMap className="h-40 md:h-[165px]" />
+          <div className="mt-2 text-[11px] text-gray-400">
             📌 {MOCK.location.address}
           </div>
-        </div>
-        <div style={S.card}>
-          <div style={S.cardTitle}>💓 Heart Rate</div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              marginBottom: 10,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 42,
-                fontWeight: 900,
-                color: "#EF4444",
-                lineHeight: 1,
-              }}
-            >
+        </Card>
+
+        <Card title="💓 Heart Rate">
+          <div className="flex items-center gap-4 mb-3 md:mb-4">
+            <div className="text-4xl md:text-5xl font-black text-red-500 leading-none">
               {bpm}
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#6B7280" }}>BPM</div>
-              <span style={S.badge("#22C55E")}>● Normal</span>
+              <div className="text-[10px] md:text-[11px] text-gray-500 mb-1">
+                BPM
+              </div>
+              <Badge color="#22C55E">● Normal</Badge>
             </div>
           </div>
           <Sparkline
@@ -442,161 +423,135 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
             color="#EF4444"
             h={55}
           />
-          <div style={{ marginTop: 8, fontSize: 10, color: "#6B7280" }}>
-            Stress Level:{" "}
-            <span style={{ color: "#22C55E", fontWeight: 700 }}>Low</span>
+          <div className="mt-2 text-[10px] text-gray-500">
+            Stress Level: <span className="text-green-500 font-bold">Low</span>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Quick Actions */}
-      <div style={{ ...S.card, marginBottom: 14 }}>
-        <div style={S.cardTitle}>⚡ Quick Actions</div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-around",
-            flexWrap: "wrap",
-            gap: 16,
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
+      <Card title="⚡ Quick Actions">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-6 py-2">
+          <div className="w-full sm:w-auto flex flex-col items-center justify-center shrink-0">
             <button
-              style={S.sosBtn(sosActive)}
+              className={`w-20 h-20 md:w-24 md:h-24 rounded-full font-black text-xs md:text-sm tracking-widest text-white transition-all duration-300 flex items-center justify-center
+                ${sosActive ? "bg-red-500/20 border-4 border-red-500 shadow-[0_0_32px_rgba(239,68,68,0.6)]" : "bg-red-500 border-4 border-red-500/60 hover:brightness-110"}
+              `}
               onClick={() => setSosActive((s) => !s)}
             >
               {sosActive ? "ACTIVE" : "SOS"}
             </button>
-            <div style={{ fontSize: 9, color: "#6B7280", marginTop: 6 }}>
+            <div className="text-[9px] md:text-[10px] text-gray-500 mt-2 font-semibold">
               Emergency Alert
             </div>
           </div>
-          {[
-            { label: "Total Alerts", value: "3", color: "#EF4444" },
-            { label: "Safe Zones", value: "2", color: "#22C55E" },
-            { label: "Contacts", value: "4", color: "#60A5FA" },
-            { label: "Uptime", value: "99%", color: "#A78BFA" },
-          ].map((s) => (
-            <div key={s.label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 26, fontWeight: 900, color: s.color }}>
-                {s.value}
+
+          <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            {[
+              { label: "Total Alerts", value: "3", color: "text-red-500" },
+              { label: "Safe Zones", value: "2", color: "text-green-500" },
+              { label: "Contacts", value: "4", color: "text-blue-400" },
+              { label: "Uptime", value: "99%", color: "text-purple-400" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="text-center bg-white/5 rounded-xl p-3 sm:bg-transparent sm:p-0"
+              >
+                <div className={`text-xl md:text-3xl font-black ${s.color}`}>
+                  {s.value}
+                </div>
+                <div className="text-[9px] md:text-[10px] text-gray-500 mt-1 md:mt-2">
+                  {s.label}
+                </div>
               </div>
-              <div style={{ fontSize: 9, color: "#6B7280", marginTop: 2 }}>
-                {s.label}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Tech Stack */}
-      <div style={S.card}>
-        <div style={S.cardTitle}>🛠️ Technology Stack</div>
-        <div
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}
-        >
+      <Card title="🛠️ Technology Stack">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
           {[
-            { cat: "Frontend", val: "Next.js 14 + Tailwind CSS" },
+            { cat: "Frontend", val: "React + Tailwind CSS" },
             { cat: "Backend", val: "Django REST Framework + PostgreSQL" },
             { cat: "Hardware", val: "ESP32 + NEO-6M GPS + SIM800L GSM" },
             { cat: "Algorithm", val: "Haversine + Motion Anomaly Detection" },
             { cat: "AI/ML", val: "TensorFlow.js — Danger Prediction" },
-            { cat: "Hosting", val: "Vercel (Frontend) + Railway (Backend)" },
+            { cat: "Hosting", val: "Vercel + Railway" },
           ].map((t) => (
             <div
               key={t.cat}
-              style={{ padding: "8px 0", borderBottom: "1px solid #ffffff06" }}
+              className="py-2 border-b border-white/5 last:border-0 sm:last:border-b"
             >
-              <div
-                style={{
-                  fontSize: 9,
-                  color: "#6B7280",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                }}
-              >
+              <div className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
                 {t.cat}
               </div>
-              <div style={{ fontSize: 11, color: "#E2E8F0", marginTop: 2 }}>
+              <div className="text-[10px] md:text-[11px] text-slate-300 mt-1">
                 {t.val}
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
 
 function TrackingPage() {
-  const S = styles;
   return (
-    <div>
-      <h2 style={S.pageTitle}>🗺️ Live GPS Tracking</h2>
-      <div style={{ ...S.card, marginBottom: 14 }}>
-        <FakeMap height={300} />
-      </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: 12,
-          marginBottom: 14,
-        }}
-      >
+    <div className="animate-in fade-in duration-300">
+      <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 mb-4 md:mb-5">
+        🗺️ Live GPS Tracking
+      </h2>
+      <Card>
+        <FakeMap className="h-64 md:h-[350px]" />
+      </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4">
         {[
           { label: "Latitude", value: "23.8103°N", color: "#60A5FA" },
           { label: "Longitude", value: "90.4125°E", color: "#60A5FA" },
           { label: "Speed", value: "0 km/h", color: "#22C55E" },
         ].map((s) => (
-          <div key={s.label} style={S.statCard(s.color)}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: s.color }}>
+          <div
+            key={s.label}
+            className="bg-[#0D1117] rounded-xl p-4 border"
+            style={{ borderColor: `${s.color}18` }}
+          >
+            <div
+              className="text-base md:text-lg font-extrabold"
+              style={{ color: s.color }}
+            >
               {s.value}
             </div>
-            <div style={{ fontSize: 10, color: "#6B7280", marginTop: 3 }}>
+            <div className="text-[10px] md:text-xs text-gray-500 mt-1">
               {s.label}
             </div>
           </div>
         ))}
       </div>
-      <div style={S.card}>
-        <div style={S.cardTitle}>📍 Location Details</div>
-        {[
-          { label: "Address", value: "Mirpur 10, Dhaka" },
-          { label: "Last Updated", value: "2 minutes ago" },
-          { label: "Update Rate", value: "Every 30 seconds" },
-        ].map((item, i) => (
-          <div key={i} style={S.listItem}>
-            <span style={{ fontSize: 11, color: "#9CA3AF" }}>{item.label}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#E2E8F0" }}>
-              {item.value}
-            </span>
-          </div>
-        ))}
-        <div style={{ ...S.listItem, borderBottom: "none" }}>
-          <span style={{ fontSize: 11, color: "#9CA3AF" }}>Safe Zone</span>
-          <span style={S.badge("#22C55E")}>✓ Inside Home Zone</span>
-        </div>
-      </div>
+      <Card title="📍 Location Details">
+        <ListItem label="Address" value="Mirpur 10, Dhaka" />
+        <ListItem label="Last Updated" value="2 minutes ago" />
+        <ListItem label="Update Rate" value="Every 30 seconds" />
+        <ListItem
+          label="Safe Zone"
+          badge={{ label: "✓ Inside Home Zone", color: "#22C55E" }}
+          border={false}
+        />
+      </Card>
     </div>
   );
 }
 
 function HealthPage({ bpm }) {
-  const S = styles;
   return (
-    <div>
-      <h2 style={S.pageTitle}>💓 Health Monitor</h2>
-      <div style={{ ...S.card, marginBottom: 14 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-around",
-            padding: "8px 0",
-          }}
-        >
+    <div className="animate-in fade-in duration-300">
+      <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 mb-4 md:mb-5">
+        💓 Health Monitor
+      </h2>
+      <Card>
+        <div className="flex flex-wrap justify-around py-2 gap-4">
           <RingGauge
             value={bpm}
             max={120}
@@ -618,362 +573,232 @@ function HealthPage({ bpm }) {
             sublabel="Battery"
           />
         </div>
-      </div>
-      <div style={{ ...S.card, marginBottom: 14 }}>
-        <div style={S.cardTitle}>❤️ Heart Rate — Live Graph</div>
+      </Card>
+      <Card title="❤️ Heart Rate — Live Graph">
         <Sparkline
           data={[...MOCK.heartRate.trend.slice(-10), bpm]}
           color="#EF4444"
-          h={70}
+          h={80}
         />
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: 6,
-          }}
-        >
-          <span style={{ fontSize: 9, color: "#6B7280" }}>Min: 68 BPM</span>
-          <span style={{ fontSize: 9, color: "#EF4444", fontWeight: 700 }}>
+        <div className="flex justify-between items-center mt-3">
+          <span className="text-[9px] md:text-[10px] text-gray-500">
+            Min: 68 BPM
+          </span>
+          <span className="text-[9px] md:text-[10px] text-red-500 font-bold bg-red-500/10 px-2 py-1 rounded-md">
             Current: {bpm} BPM
           </span>
-          <span style={{ fontSize: 9, color: "#6B7280" }}>Max: 82 BPM</span>
+          <span className="text-[9px] md:text-[10px] text-gray-500">
+            Max: 82 BPM
+          </span>
         </div>
-      </div>
-      <div style={S.card}>
-        <div style={S.cardTitle}>📊 Health Summary</div>
-        {[
-          {
-            label: "Resting Heart Rate",
-            value: "70 BPM",
-            status: "Normal",
-            color: "#22C55E",
-          },
-          {
-            label: "Stress Level",
-            value: "Low",
-            status: "Good",
-            color: "#22C55E",
-          },
-          {
-            label: "Activity Level",
-            value: "Moderate",
-            status: "Active",
-            color: "#60A5FA",
-          },
-          {
-            label: "Anomaly Count (Today)",
-            value: "0",
-            status: "Clear",
-            color: "#22C55E",
-          },
-        ].map((h, i) => (
-          <div key={i} style={S.listItem}>
-            <span style={{ fontSize: 11, color: "#9CA3AF" }}>{h.label}</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#E2E8F0" }}>
-                {h.value}
-              </span>
-              <span style={S.badge(h.color)}>{h.status}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      </Card>
+      <Card title="📊 Health Summary">
+        <ListItem
+          label="Resting Heart Rate"
+          value="70 BPM"
+          badge={{ label: "Normal", color: "#22C55E" }}
+        />
+        <ListItem
+          label="Stress Level"
+          value="Low"
+          badge={{ label: "Good", color: "#22C55E" }}
+        />
+        <ListItem
+          label="Activity Level"
+          value="Moderate"
+          badge={{ label: "Active", color: "#60A5FA" }}
+        />
+        <ListItem
+          label="Anomaly Count (Today)"
+          value="0"
+          badge={{ label: "Clear", color: "#22C55E" }}
+          border={false}
+        />
+      </Card>
     </div>
   );
 }
 
 function AlertsPage() {
-  const S = styles;
   const [filter, setFilter] = useState("All");
   const filters = ["All", "SOS", "Geofence", "Anomaly"];
   const filtered =
     filter === "All"
       ? MOCK.alerts
       : MOCK.alerts.filter((a) => a.type === filter);
+
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 16,
-        }}
-      >
-        <h2 style={{ ...S.pageTitle, margin: 0 }}>🚨 Alerts & Incidents</h2>
-        <div style={{ display: "flex", gap: 6 }}>
+    <div className="animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-5 gap-3">
+        <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 m-0">
+          🚨 Alerts & Incidents
+        </h2>
+        <div className="flex overflow-x-auto gap-2 pb-1 sm:pb-0 hide-scrollbar">
           {filters.map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              style={{
-                padding: "5px 12px",
-                borderRadius: 8,
-                fontSize: 10,
-                fontWeight: 700,
-                cursor: "pointer",
-                background: filter === f ? "#6D28D9" : "#ffffff08",
-                border:
-                  filter === f ? "1px solid #6D28D960" : "1px solid #ffffff10",
-                color: filter === f ? "white" : "#6B7280",
-              }}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border
+                ${filter === f ? "bg-purple-700 border-purple-600 text-white" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"}`}
             >
               {f}
             </button>
           ))}
         </div>
       </div>
+
       {filtered.map((a) => (
-        <div
+        <Card
           key={a.id}
-          style={{
-            ...S.card,
-            borderLeft: `3px solid ${a.color}`,
-            marginBottom: 10,
-          }}
+          className="border-l-4"
+          style={{ borderLeftColor: a.color }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 5,
-                }}
-              >
-                <span style={S.badge(a.color)}>{a.type}</span>
-                <span style={{ fontSize: 9, color: "#6B7280" }}>{a.time}</span>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Badge color={a.color}>{a.type}</Badge>
+                <span className="text-[9px] md:text-[10px] text-gray-500">
+                  {a.time}
+                </span>
               </div>
-              <div style={{ fontSize: 11, color: "#E2E8F0" }}>
+              <div className="text-[11px] md:text-xs text-slate-300 font-medium">
                 📍 {a.location}
               </div>
             </div>
-            <span
-              style={S.badge(a.status === "Resolved" ? "#22C55E" : "#F59E0B")}
-            >
+            <Badge color={a.status === "Resolved" ? "#22C55E" : "#F59E0B"}>
               {a.status === "Resolved" ? "✓" : "●"} {a.status}
-            </span>
+            </Badge>
           </div>
-        </div>
+        </Card>
       ))}
-      <div style={S.card}>
-        <div style={S.cardTitle}>⚡ Send Test Alert</div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button style={S.actionBtn("#EF4444")}>🆘 Test SOS</button>
-          <button style={S.actionBtn("#F59E0B")}>📍 Test Geofence</button>
-          <button style={S.actionBtn("#8B5CF6")}>⚠️ Test Anomaly</button>
+
+      <Card title="⚡ Send Test Alert">
+        <div className="flex flex-wrap gap-2">
+          <ActionBtn color="#EF4444">🆘 Test SOS</ActionBtn>
+          <ActionBtn color="#F59E0B">📍 Test Geofence</ActionBtn>
+          <ActionBtn color="#8B5CF6">⚠️ Test Anomaly</ActionBtn>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
 
 function HistoryPage() {
-  const S = styles;
   return (
-    <div>
-      <h2 style={S.pageTitle}>🛣️ Route History</h2>
-      <div style={{ ...S.card, marginBottom: 14 }}>
-        <div style={S.cardTitle}>
-          📅 Today — {new Date().toLocaleDateString("en-BD")}
+    <div className="animate-in fade-in duration-300">
+      <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 mb-4 md:mb-5">
+        🛣️ Route History
+      </h2>
+      <Card title={`📅 Today — ${new Date().toLocaleDateString("en-BD")}`}>
+        <FakeMap className="h-48 md:h-[250px]" />
+      </Card>
+      <Card title="🕐 Timeline">
+        <div className="py-2">
+          {MOCK.routes.map((r, i) => (
+            <div key={i} className="flex gap-4 relative pb-6 last:pb-0">
+              {/* Timeline line connecting items */}
+              {i < MOCK.routes.length - 1 && (
+                <div className="absolute top-6 left-[30px] bottom-[-6px] w-[2px] bg-gradient-to-b from-purple-600/50 to-blue-600/50 rounded-full" />
+              )}
+              <div className="text-[10px] text-gray-500 min-w-[44px] font-mono pt-0.5">
+                {r.time}
+              </div>
+              <div className="w-[10px] h-[10px] rounded-full bg-purple-500 shrink-0 mt-1 border-2 border-[#0D1117] z-10" />
+              <div className="-mt-1">
+                <div className="text-xs md:text-sm font-semibold text-slate-200">
+                  {r.loc}
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">
+                  Distance: {r.dist}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-        <FakeMap height={200} />
-      </div>
-      <div style={S.card}>
-        <div style={S.cardTitle}>🕐 Timeline</div>
-        {MOCK.routes.map((r, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              gap: 14,
-              padding: "10px 0",
-              borderBottom:
-                i < MOCK.routes.length - 1 ? "1px solid #ffffff06" : "none",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 10,
-                color: "#6B7280",
-                minWidth: 44,
-                fontFamily: "monospace",
-                paddingTop: 2,
-              }}
-            >
-              {r.time}
-            </div>
-            <div
-              style={{
-                width: 2,
-                background: "linear-gradient(to bottom, #6D28D9, #2563EB)",
-                borderRadius: 4,
-                flexShrink: 0,
-              }}
-            />
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#E2E8F0" }}>
-                {r.loc}
-              </div>
-              <div style={{ fontSize: 9, color: "#6B7280", marginTop: 2 }}>
-                Distance: {r.dist}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      </Card>
     </div>
   );
 }
 
 function ZonesPage() {
-  const S = styles;
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 16,
-        }}
-      >
-        <h2 style={{ ...S.pageTitle, margin: 0 }}>📍 Safe Zone Management</h2>
-        <button style={S.actionBtn("#6D28D9")}>+ Add Zone</button>
+    <div className="animate-in fade-in duration-300">
+      <div className="flex items-center justify-between mb-4 md:mb-5">
+        <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 m-0">
+          📍 Safe Zone Management
+        </h2>
+        <ActionBtn color="#6D28D9">+ Add Zone</ActionBtn>
       </div>
+
       {MOCK.safeZones.map((z, i) => (
-        <div
-          key={i}
-          style={{
-            ...S.card,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 10,
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#E2E8F0" }}>
-              {z.name}
+        <Card key={i} className="!mb-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs md:text-sm font-bold text-slate-200">
+                {z.name}
+              </div>
+              <div className="text-[10px] text-gray-500 mt-1">
+                Radius: {z.radius}
+              </div>
             </div>
-            <div style={{ fontSize: 10, color: "#6B7280", marginTop: 2 }}>
-              Radius: {z.radius}
+            <div className="flex items-center gap-2 md:gap-3">
+              <Badge color={z.status === "Active" ? "#22C55E" : "#6B7280"}>
+                {z.status}
+              </Badge>
+              <button className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-[10px] hover:bg-white/10 transition-colors">
+                Edit
+              </button>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span
-              style={S.badge(z.status === "Active" ? "#22C55E" : "#6B7280")}
-            >
-              {z.status}
-            </span>
-            <button
-              style={{
-                padding: "5px 12px",
-                borderRadius: 8,
-                background: "#ffffff08",
-                border: "1px solid #ffffff10",
-                color: "#9CA3AF",
-                fontSize: 10,
-                cursor: "pointer",
-              }}
-            >
-              Edit
-            </button>
-          </div>
-        </div>
+        </Card>
       ))}
-      <div style={S.card}>
-        <div style={S.cardTitle}>🗺️ Zone Preview</div>
-        <FakeMap height={180} />
-      </div>
+      <Card title="🗺️ Zone Preview" className="mt-5">
+        <FakeMap className="h-48 md:h-[200px]" />
+      </Card>
     </div>
   );
 }
 
 function ContactsPage() {
-  const S = styles;
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 16,
-        }}
-      >
-        <h2 style={{ ...S.pageTitle, margin: 0 }}>📞 Emergency Contacts</h2>
-        <button style={S.actionBtn("#6D28D9")}>+ Add Contact</button>
+    <div className="animate-in fade-in duration-300">
+      <div className="flex items-center justify-between mb-4 md:mb-5">
+        <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 m-0">
+          📞 Emergency Contacts
+        </h2>
+        <ActionBtn color="#6D28D9">+ Add Contact</ActionBtn>
       </div>
+
       {MOCK.contacts.map((c, i) => (
-        <div
-          key={i}
-          style={{
-            ...S.card,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: "50%",
-                background: "#6D28D915",
-                border: "1px solid #6D28D930",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 16,
-              }}
-            >
-              {i === 3 ? "🚨" : "👤"}
-            </div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#E2E8F0" }}>
-                {c.name}
+        <Card key={i} className="!mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-600/10 border border-purple-600/30 flex items-center justify-center text-lg shrink-0">
+                {i === 3 ? "🚨" : "👤"}
               </div>
-              <div style={{ fontSize: 10, color: "#6B7280", marginTop: 2 }}>
-                {c.phone}
+              <div>
+                <div className="text-xs md:text-sm font-bold text-slate-200">
+                  {c.name}
+                </div>
+                <div className="text-[10px] md:text-[11px] text-gray-500 mt-0.5">
+                  {c.phone}
+                </div>
               </div>
             </div>
+            <div className="flex items-center gap-3 pl-13 sm:pl-0">
+              <Badge color="#A78BFA">#{c.priority}</Badge>
+              <button className="px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/25 text-green-500 text-[10px] font-bold hover:bg-green-500/20 transition-colors">
+                Test
+              </button>
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={S.badge("#A78BFA")}>#{c.priority}</span>
-            <button
-              style={{
-                padding: "5px 12px",
-                borderRadius: 8,
-                background: "#22C55E10",
-                border: "1px solid #22C55E25",
-                color: "#22C55E",
-                fontSize: 10,
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
-            >
-              Test
-            </button>
-          </div>
-        </div>
+        </Card>
       ))}
     </div>
   );
 }
 
 function ReportsPage() {
-  const S = styles;
   const reports = [
     {
       title: "Incident Report — Alert #001",
@@ -998,67 +823,43 @@ function ReportsPage() {
     },
   ];
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 16,
-        }}
-      >
-        <h2 style={{ ...S.pageTitle, margin: 0 }}>📄 Evidence & Reports</h2>
-        <button style={S.actionBtn("#6D28D9")}>⬇ Export PDF</button>
+    <div className="animate-in fade-in duration-300">
+      <div className="flex items-center justify-between mb-4 md:mb-5">
+        <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 m-0">
+          📄 Evidence & Reports
+        </h2>
+        <ActionBtn color="#6D28D9">⬇ Export PDF</ActionBtn>
       </div>
+
       {reports.map((r, i) => (
-        <div
+        <Card
           key={i}
-          style={{
-            ...S.card,
-            borderLeft: `3px solid ${r.color}`,
-            marginBottom: 10,
-          }}
+          className="border-l-4 !mb-3"
+          style={{ borderLeftColor: r.color }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#E2E8F0" }}>
+              <div className="text-xs md:text-sm font-bold text-slate-200">
                 {r.title}
               </div>
-              <div style={{ fontSize: 9, color: "#6B7280", marginTop: 4 }}>
+              <div className="text-[9px] md:text-[10px] text-gray-500 mt-1">
                 {r.date} · {r.size}
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={S.badge(r.color)}>{r.type}</span>
-              <button
-                style={{
-                  padding: "5px 12px",
-                  borderRadius: 8,
-                  background: "#ffffff08",
-                  border: "1px solid #ffffff10",
-                  color: "#9CA3AF",
-                  fontSize: 10,
-                  cursor: "pointer",
-                }}
-              >
+            <div className="flex items-center gap-3">
+              <Badge color={r.color}>{r.type}</Badge>
+              <button className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-[10px] hover:bg-white/10 transition-colors">
                 View
               </button>
             </div>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );
 }
 
 function SettingsPage() {
-  const S = styles;
   const sections = [
     {
       section: "Device Configuration",
@@ -1089,114 +890,44 @@ function SettingsPage() {
     },
   ];
   return (
-    <div>
-      <h2 style={S.pageTitle}>⚙️ Settings</h2>
-      {sections.map((sec) => (
-        <div key={sec.section} style={{ ...S.card, marginBottom: 14 }}>
-          <div style={S.cardTitle}>{sec.section}</div>
-          {sec.fields.map((f) => (
-            <div key={f.label} style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: "#6B7280", marginBottom: 5 }}>
-                {f.label}
-              </div>
-              <input style={S.input} defaultValue={f.value} type={f.type} />
+    <div className="animate-in fade-in duration-300">
+      <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 mb-4 md:mb-5">
+        ⚙️ Settings
+      </h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {sections.map((sec) => (
+          <Card
+            key={sec.section}
+            title={sec.section}
+            className="flex flex-col h-full"
+          >
+            <div className="flex-1">
+              {sec.fields.map((f) => (
+                <div key={f.label} className="mb-4 last:mb-0">
+                  <label className="block text-[10px] text-gray-500 mb-1.5 font-semibold">
+                    {f.label}
+                  </label>
+                  <input
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 md:py-2.5 text-slate-200 text-xs md:text-sm focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-colors"
+                    defaultValue={f.value}
+                    type={f.type}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-          <button style={{ ...S.actionBtn("#6D28D9"), marginTop: 4 }}>
-            Save Changes
-          </button>
-        </div>
-      ))}
+            {sec.section === "Profile" && (
+              <div className="mt-5">
+                <ActionBtn color="#6D28D9" className="w-full">
+                  Save Changes
+                </ActionBtn>
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
-
-// ─── SHARED STYLES ────────────────────────────────────────────────────────────
-const styles = {
-  card: {
-    background: "#0D1117",
-    border: "1px solid #ffffff08",
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 14,
-  },
-  cardTitle: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: "#6B7280",
-    textTransform: "uppercase",
-    letterSpacing: "0.12em",
-    marginBottom: 14,
-  },
-  statCard: (accent) => ({
-    background: "#0D1117",
-    border: `1px solid ${accent}18`,
-    borderRadius: 14,
-    padding: 16,
-    borderTop: `2px solid ${accent}`,
-  }),
-  badge: (color) => ({
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "3px 9px",
-    borderRadius: 20,
-    background: color + "15",
-    border: `1px solid ${color}30`,
-    fontSize: 9,
-    color,
-    fontWeight: 700,
-  }),
-  actionBtn: (color) => ({
-    padding: "8px 16px",
-    borderRadius: 10,
-    background: color,
-    border: "none",
-    color: "white",
-    fontWeight: 700,
-    fontSize: 11,
-    cursor: "pointer",
-  }),
-  sosBtn: (active) => ({
-    width: 84,
-    height: 84,
-    borderRadius: "50%",
-    background: active ? "#EF444420" : "#EF4444",
-    border: `3px solid ${active ? "#EF4444" : "#EF444460"}`,
-    color: "white",
-    fontSize: 11,
-    fontWeight: 900,
-    cursor: "pointer",
-    letterSpacing: "0.1em",
-    boxShadow: active ? "0 0 32px #EF444460" : "none",
-    transition: "all 0.3s",
-  }),
-  listItem: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "10px 0",
-    borderBottom: "1px solid #ffffff06",
-  },
-  input: {
-    width: "100%",
-    background: "#ffffff06",
-    border: "1px solid #ffffff12",
-    borderRadius: 10,
-    padding: "9px 13px",
-    color: "white",
-    fontSize: 12,
-    outline: "none",
-    boxSizing: "border-box",
-  },
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: 800,
-    letterSpacing: "-0.03em",
-    color: "#F1F5F9",
-    margin: "0 0 18px",
-  },
-};
 
 // ─── NAV CONFIG ───────────────────────────────────────────────────────────────
 const NAV = [
@@ -1212,19 +943,40 @@ const NAV = [
 ];
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
-export default function SafetySystem() {
+export default function App() {
   const [page, setPage] = useState("overview");
   const [sosActive, setSosActive] = useState(false);
   const [bpm, setBpm] = useState(72);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile defaults to closed
+
+  // Auto-close sidebar on mobile after navigating
+  const handleNavClick = (id) => {
+    setPage(id);
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  };
 
   useEffect(() => {
+    // Open sidebar by default on desktop
+    if (window.innerWidth >= 768) setSidebarOpen(true);
+
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setSidebarOpen(true);
+      else setSidebarOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+
     const t = setInterval(() => {
       setBpm((prev) =>
         Math.max(60, Math.min(90, prev + (Math.random() > 0.5 ? 1 : -1))),
       );
     }, 2000);
-    return () => clearInterval(t);
+
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const currentNav = NAV.find((n) => n.id === page);
@@ -1261,299 +1013,155 @@ export default function SafetySystem() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#030712",
-        color: "white",
-        fontFamily: "'DM Sans', system-ui, sans-serif",
-        display: "flex",
-      }}
-    >
+    <div className="min-h-screen bg-gray-950 text-white font-sans flex overflow-hidden">
+      {/* ── MOBILE OVERLAY ── */}
+      <div
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
       {/* ── SIDEBAR ── */}
       <div
-        style={{
-          width: sidebarOpen ? 220 : 64,
-          flexShrink: 0,
-          background: "#080E18",
-          borderRight: "1px solid #ffffff08",
-          display: "flex",
-          flexDirection: "column",
-          transition: "width 0.25s cubic-bezier(0.4,0,0.2,1)",
-          overflow: "hidden",
-          position: "relative",
-          zIndex: 10,
-        }}
+        className={`fixed md:relative top-0 left-0 h-full z-50 bg-[#080E18] border-r border-white/5 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0
+          ${sidebarOpen ? "translate-x-0 w-[240px]" : "-translate-x-full md:translate-x-0 md:w-[72px]"}
+        `}
       >
         {/* Sidebar Header */}
-        <div
-          style={{
-            padding: "18px 14px 14px",
-            borderBottom: "1px solid #ffffff08",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              flexShrink: 0,
-              background: "linear-gradient(135deg,#6D28D9,#2563EB)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 16,
-            }}
-          >
+        <div className="h-16 border-b border-white/5 flex items-center px-4 gap-3 shrink-0">
+          <div className="w-9 h-9 rounded-xl shrink-0 bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-lg">
             🛡️
           </div>
           {sidebarOpen && (
-            <span
-              style={{
-                fontWeight: 900,
-                fontSize: 15,
-                letterSpacing: "-0.03em",
-                whiteSpace: "nowrap",
-                background: "linear-gradient(90deg,#A78BFA,#60A5FA)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
+            <span className="font-black text-base tracking-tight whitespace-nowrap bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent animate-in fade-in">
               SafeGuard
             </span>
           )}
         </div>
 
-        {/* Toggle Button */}
+        {/* Toggle Button (Desktop only, absolutely positioned outside) */}
         <button
           onClick={() => setSidebarOpen((o) => !o)}
-          style={{
-            position: "absolute",
-            top: 18,
-            right: -12,
-            width: 24,
-            height: 24,
-            background: "#1E293B",
-            border: "1px solid #ffffff15",
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            color: "#6B7280",
-          }}
+          className="hidden md:flex absolute top-5 -right-3 w-6 h-6 bg-gray-800 border border-white/10 rounded-full items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors z-50 shadow-lg"
         >
-          <Icon d={sidebarOpen ? Icons.close : Icons.chevron} size={11} />
+          <Icon d={sidebarOpen ? Icons.chevron : Icons.menu} size={11} />
         </button>
 
         {/* Nav Items */}
-        <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto" }}>
+        <nav className="flex-1 py-4 px-3 overflow-y-auto hide-scrollbar space-y-1">
           {NAV.map((n) => {
             const active = page === n.id;
             return (
               <button
                 key={n.id}
-                onClick={() => setPage(n.id)}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: sidebarOpen ? "9px 12px" : "9px 0",
-                  justifyContent: sidebarOpen ? "flex-start" : "center",
-                  borderRadius: 10,
-                  background: active ? "#6D28D918" : "none",
-                  border: active
-                    ? "1px solid #6D28D930"
-                    : "1px solid transparent",
-                  color: active ? "#A78BFA" : "#6B7280",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  marginBottom: 2,
-                  whiteSpace: "nowrap",
-                  transition: "all 0.15s",
-                }}
+                onClick={() => handleNavClick(n.id)}
+                title={!sidebarOpen ? n.label : undefined}
+                className={`w-full flex items-center gap-3 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${sidebarOpen ? "px-3 justify-start" : "px-0 justify-center"}
+                  ${active ? "bg-purple-600/15 border border-purple-500/30 text-purple-400" : "border border-transparent text-gray-500 hover:bg-white/5 hover:text-gray-300"}
+                `}
               >
                 <Icon
                   d={n.icon}
-                  size={15}
-                  color={active ? "#A78BFA" : "#6B7280"}
+                  size={16}
+                  color={active ? "#A78BFA" : "currentColor"}
                 />
-                {sidebarOpen && <span>{n.label}</span>}
+
+                {sidebarOpen && (
+                  <span className="animate-in fade-in">{n.label}</span>
+                )}
+
                 {sidebarOpen && n.badge && (
-                  <span
-                    style={{
-                      marginLeft: "auto",
-                      background: "#EF4444",
-                      color: "white",
-                      borderRadius: 10,
-                      fontSize: 9,
-                      padding: "1px 6px",
-                      fontWeight: 800,
-                    }}
-                  >
+                  <span className="ml-auto bg-red-500 text-white rounded-md text-[9px] px-1.5 py-0.5 font-bold animate-in fade-in">
                     {n.badge}
                   </span>
+                )}
+                {!sidebarOpen && n.badge && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#080E18]"></span>
                 )}
               </button>
             );
           })}
         </nav>
-
-        {/* Sidebar Footer */}
-        <div style={{ padding: "12px 14px", borderTop: "1px solid #ffffff06" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg,#6D28D950,#2563EB50)",
-                border: "1px solid #6D28D940",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 13,
-                flexShrink: 0,
-              }}
-            >
-              👤
-            </div>
-            {sidebarOpen && (
-              <div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "#E2E8F0",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {MOCK.user.name}
-                </div>
-                <div
-                  style={{
-                    fontSize: 9,
-                    color: "#4B5563",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {MOCK.user.id}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* ── MAIN ── */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          minWidth: 0,
-        }}
-      >
+      {/* ── MAIN CONTENT ── */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Top Bar */}
-        <div
-          style={{
-            background: "#080E18",
-            borderBottom: "1px solid #ffffff08",
-            padding: "12px 24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 16 }}>{currentNav?.emoji}</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#E2E8F0" }}>
-              {currentNav?.label}
-            </span>
+        <header className="h-16 bg-[#080E18]/80 backdrop-blur-md border-b border-white/5 px-4 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20">
+          <div className="flex items-center gap-3 md:gap-4">
+            <button
+              className="md:hidden p-1.5 -ml-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Icon d={Icons.menu} size={20} />
+            </button>
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg md:text-xl leading-none">
+                {currentNav?.emoji}
+              </span>
+              <span className="text-sm md:text-base font-bold text-slate-200">
+                {currentNav?.label}
+              </span>
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+
+          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar mask-edges pl-4">
             {[
-              { label: "SAFE", color: "#22C55E", dot: true },
-              { label: `🔋 ${MOCK.device.battery}%`, color: "#60A5FA" },
-              { label: "📡 Strong", color: "#A78BFA" },
+              { label: "SAFE", color: "#22C55E", dot: true, hideMobile: false },
+              {
+                label: `🔋 ${MOCK.device.battery}%`,
+                color: "#60A5FA",
+                hideMobile: false,
+              },
+              { label: "📡 Strong", color: "#A78BFA", hideMobile: true },
             ].map((c) => (
               <div
                 key={c.label}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-bold border whitespace-nowrap shrink-0 ${c.hideMobile ? "hidden sm:flex" : "flex"}`}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                  padding: "4px 10px",
-                  borderRadius: 20,
-                  background: c.color + "12",
-                  border: `1px solid ${c.color}25`,
-                  fontSize: 10,
+                  backgroundColor: `${c.color}12`,
+                  borderColor: `${c.color}25`,
                   color: c.color,
-                  fontWeight: 700,
                 }}
               >
                 {c.dot && (
                   <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: c.color,
-                      display: "inline-block",
-                    }}
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: c.color }}
                   />
                 )}
                 {c.label}
               </div>
             ))}
           </div>
-        </div>
+        </header>
 
-        {/* Page Content */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "24px",
-            maxWidth: 960,
-            width: "100%",
-            margin: "0 auto",
-            boxSizing: "border-box",
-          }}
-        >
-          {renderPage()}
-        </div>
+        {/* Scrollable Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <div className="max-w-5xl mx-auto w-full">{renderPage()}</div>
+        </main>
 
         {/* Footer */}
-        <div
-          style={{
-            background: "#080E18",
-            borderTop: "1px solid #ffffff06",
-            padding: "6px 24px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span
-            style={{ fontSize: 9, color: "#1F2937", fontFamily: "monospace" }}
-          >
+        <footer className="bg-[#080E18] border-t border-white/5 py-2 px-4 md:px-6 flex flex-col sm:flex-row justify-between items-center shrink-0 gap-1 sm:gap-0">
+          <span className="text-[9px] md:text-[10px] text-gray-600 font-mono tracking-tight">
             SafeGuard v2.1 · BPI Final Year Project
           </span>
-          <span
-            style={{ fontSize: 9, color: "#1F2937", fontFamily: "monospace" }}
-          >
+          <span className="text-[9px] md:text-[10px] text-gray-600 font-mono tracking-tight">
             ESP32 · NEO-6M · SIM800L
           </span>
-        </div>
+        </footer>
       </div>
+
+      {/* Global CSS overrides for hiding scrollbars neatly */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .mask-edges { -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent); mask-image: linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent); }
+      `,
+        }}
+      />
     </div>
   );
 }

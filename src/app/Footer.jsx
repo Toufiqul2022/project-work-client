@@ -1,7 +1,7 @@
 "use client";
 
 // ─── ICONS (inline SVG) ───────────────────────────────────────────────────────
-const Icon = ({ d, size = 14, color = "currentColor" }) => (
+const Icon = ({ d, size = 14, color = "currentColor", className = "" }) => (
   <svg
     width={size}
     height={size}
@@ -11,6 +11,7 @@ const Icon = ({ d, size = 14, color = "currentColor" }) => (
     strokeWidth={2}
     strokeLinecap="round"
     strokeLinejoin="round"
+    className={className}
   >
     <path d={d} />
   </svg>
@@ -100,264 +101,124 @@ const SOCIAL_LINKS = [
 ];
 
 // ─── STATUS CHIP ──────────────────────────────────────────────────────────────
-function StatusChip({ children, color }) {
+function StatusChip({ children, colorClass, dotColorClass }) {
   return (
     <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "4px 10px",
-        borderRadius: 20,
-        fontSize: 11,
-        fontWeight: 700,
-        background: color + "15",
-        border: `1px solid ${color}35`,
-        color,
-        whiteSpace: "nowrap",
-      }}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${colorClass}`}
     >
       {children}
     </span>
   );
 }
 
+// ─── NAV COLUMN ──────────────────────────────────────────────────────────────
+function NavColumn({ col }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-4">
+        {col.title}
+      </p>
+      <ul className="flex flex-col gap-2.5">
+        {col.links.map((link) => (
+          <li key={link.label}>
+            <a
+              href={link.href}
+              className="inline-flex items-center gap-2 text-[13px] text-gray-500 hover:text-slate-200 transition-colors duration-150"
+            >
+              <Icon d={link.icon} size={13} />
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 // ─── FOOTER COMPONENT ─────────────────────────────────────────────────────────
 export default function Footer() {
   return (
-    <footer
-      style={{
-        background: "#080E18",
-        borderTop: "1px solid #ffffff08",
-        fontFamily: "'DM Sans', system-ui, sans-serif",
-        color: "white",
-      }}
-    >
-      {/* ── MAIN GRID ── */}
-      <div
-        style={{
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: "48px 32px 32px",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr 1fr",
-            gap: 40,
-            marginBottom: 40,
-          }}
-        >
-          {/* Brand Column */}
-          <div>
+    <footer className="bg-[#080E18] border-t border-white/[0.05] font-sans text-white">
+      <div className="max-w-[1200px] mx-auto px-6 sm:px-8 pt-12 pb-8">
+        {/* ── MAIN GRID ── */}
+        {/*
+          Mobile:   1 col (brand full-width, then nav cols stacked)
+          Tablet:   2 cols (brand + one nav group per row)
+          Desktop:  4 cols (brand takes 2fr, each nav col 1fr)
+        */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-8 lg:gap-10 mb-10">
+          {/* Brand Column — always full-width on mobile */}
+          <div className="col-span-2 sm:col-span-2 lg:col-span-1">
             {/* Logo */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  background: "linear-gradient(135deg,#6D28D9,#2563EB)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-violet-700 to-blue-600 flex items-center justify-center shrink-0">
                 <Icon d={Icons.shield} size={17} color="white" />
               </div>
-              <span
-                style={{
-                  fontWeight: 900,
-                  fontSize: 18,
-                  letterSpacing: "-0.03em",
-                  background: "linear-gradient(90deg,#A78BFA,#60A5FA)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
+              <span className="font-black text-[18px] tracking-tight bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
                 SafeGuard
               </span>
             </div>
 
             {/* Description */}
-            <p
-              style={{
-                fontSize: 13,
-                color: "#6B7280",
-                lineHeight: 1.75,
-                margin: "0 0 20px",
-                maxWidth: 280,
-              }}
-            >
+            <p className="text-[13px] text-gray-500 leading-relaxed mb-5 max-w-[300px] lg:max-w-[280px]">
               IoT-based child safety &amp; anti-kidnapping system. Real-time GPS
               tracking, smart alerts, and health monitoring — powered by ESP32
               &amp; AI.
             </p>
 
             {/* Status chips */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              <StatusChip color="#22C55E">
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: "#22C55E",
-                    display: "inline-block",
-                  }}
-                />
+            <div className="flex flex-wrap gap-2">
+              <StatusChip colorClass="bg-green-500/10 border-green-500/20 text-green-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
                 System online
               </StatusChip>
-              <StatusChip color="#60A5FA">
-                <Icon d={Icons.wifi} size={11} color="#60A5FA" />
+              <StatusChip colorClass="bg-blue-400/10 border-blue-400/20 text-blue-400">
+                <Icon d={Icons.wifi} size={11} color="currentColor" />
                 Strong signal
               </StatusChip>
-              <StatusChip color="#A78BFA">
-                <Icon d={Icons.battery} size={11} color="#A78BFA" />
+              <StatusChip colorClass="bg-violet-400/10 border-violet-400/20 text-violet-400">
+                <Icon d={Icons.battery} size={11} color="currentColor" />
                 78%
               </StatusChip>
             </div>
           </div>
 
-          {/* Nav Columns */}
+          {/* Nav Columns — 2-up on mobile/tablet, 3-up on desktop */}
           {NAV_LINKS.map((col) => (
-            <div key={col.title}>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: "#4B5563",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  marginBottom: 16,
-                }}
-              >
-                {col.title}
-              </div>
-              <ul
-                style={{
-                  listStyle: "none",
-                  margin: 0,
-                  padding: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
-                {col.links.map((link) => (
-                  <li key={link.label}>
-                    <a
-                      href={link.href}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        fontSize: 13,
-                        color: "#6B7280",
-                        textDecoration: "none",
-                        transition: "color 0.15s",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.color = "#E2E8F0")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.color = "#6B7280")
-                      }
-                    >
-                      <Icon d={link.icon} size={13} />
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <NavColumn key={col.title} col={col} />
           ))}
         </div>
 
         {/* ── BOTTOM BAR ── */}
-        <div
-          style={{
-            borderTop: "1px solid #ffffff08",
-            paddingTop: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 16,
-          }}
-        >
+        <div className="border-t border-white/[0.05] pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           {/* Left — copyright + badges */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 20,
-              flexWrap: "wrap",
-            }}
-          >
-            <span style={{ fontSize: 12, color: "#374151" }}>
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="text-[12px] text-gray-700">
               &copy; {new Date().getFullYear()} SafeGuard &mdash; BPI Final Year
               Project
             </span>
-
             {[
               { icon: Icons.tag, text: "v2.1.0" },
               { icon: Icons.code, text: "Next.js · Django · ESP32" },
             ].map((b) => (
               <span
                 key={b.text}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  fontSize: 11,
-                  color: "#374151",
-                  fontFamily: "monospace",
-                }}
+                className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 font-mono"
               >
-                <Icon d={b.icon} size={11} color="#374151" />
+                <Icon d={b.icon} size={11} color="currentColor" />
                 {b.text}
               </span>
             ))}
           </div>
 
-          {/* Right — social icons */}
-          <div style={{ display: "flex", gap: 8 }}>
+          {/* Right — social icon buttons */}
+          <div className="flex gap-2 shrink-0">
             {SOCIAL_LINKS.map((s) => (
               <a
                 key={s.label}
                 href={s.href}
                 aria-label={s.label}
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 9,
-                  background: "#ffffff06",
-                  border: "1px solid #ffffff10",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#6B7280",
-                  textDecoration: "none",
-                  transition: "background 0.15s, color 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#ffffff12";
-                  e.currentTarget.style.color = "#E2E8F0";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#ffffff06";
-                  e.currentTarget.style.color = "#6B7280";
-                }}
+                className="w-[34px] h-[34px] rounded-[9px] bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-gray-500 hover:bg-white/[0.08] hover:text-slate-200 transition-all duration-150"
               >
                 <Icon d={s.icon} size={15} />
               </a>

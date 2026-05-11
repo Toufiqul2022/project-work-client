@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 
-// ─── SVG ICON ────────────────────────────────────────────────────────────────
-const Icon = ({ d, size = 20, color = "currentColor" }) => (
+// ─── SVG ICON ─────────────────────────────────────────────────────────────────
+const Icon = ({ d, size = 20, color = "currentColor", className = "" }) => (
   <svg
     width={size}
     height={size}
@@ -15,10 +14,12 @@ const Icon = ({ d, size = 20, color = "currentColor" }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden="true"
+    className={className}
   >
     <path d={d} />
   </svg>
 );
+
 const I = {
   shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
   gps: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z M12 7a3 3 0 100 6 3 3 0 000-6z",
@@ -27,7 +28,6 @@ const I = {
   bell: "M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 01-3.46 0",
   zone: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
   wifi: "M5 12.55a11 11 0 0114.08 0 M1.42 9a16 16 0 0121.16 0 M8.53 16.11a6 6 0 016.95 0 M12 20h.01",
-  battery: "M23 7h-2a2 2 0 00-2 2v6a2 2 0 002 2h2V7z M1 7h16v10H1z",
   zap: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
   check: "M20 6L9 17l-5-5",
   arrowR: "M5 12h14 M12 5l7 7-7 7",
@@ -35,42 +35,26 @@ const I = {
   chip: "M9 3H5a2 2 0 00-2 2v4 M9 3h6 M15 3h4a2 2 0 012 2v4 M21 9v6 M21 15v4a2 2 0 01-2 2h-4 M15 21H9 M9 21H5a2 2 0 01-2-2v-4 M3 15V9",
 };
 
-// ─── PULSE DOT ───────────────────────────────────────────────────────────────
+// ─── PULSE DOT ────────────────────────────────────────────────────────────────
 function PulseDot({ color = "#22C55E", size = 8 }) {
   return (
     <span
-      style={{
-        position: "relative",
-        display: "inline-flex",
-        width: size,
-        height: size,
-        flexShrink: 0,
-      }}
+      className="relative inline-flex flex-shrink-0"
+      style={{ width: size, height: size }}
     >
       <span
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "50%",
-          background: color,
-          opacity: 0.4,
-          animation: "lp-ping 1.6s ease-in-out infinite",
-        }}
+        className="absolute inset-0 rounded-full animate-ping"
+        style={{ background: color, opacity: 0.4, animationDuration: "1.6s" }}
       />
       <span
-        style={{
-          position: "relative",
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          background: color,
-        }}
+        className="relative rounded-full"
+        style={{ width: size, height: size, background: color }}
       />
     </span>
   );
 }
 
-// ─── ANIMATED COUNTER ────────────────────────────────────────────────────────
+// ─── ANIMATED COUNTER ─────────────────────────────────────────────────────────
 function Counter({ target, suffix = "", duration = 1800 }) {
   const [val, setVal] = useState(0);
   const ref = useRef();
@@ -102,7 +86,7 @@ function Counter({ target, suffix = "", duration = 1800 }) {
   );
 }
 
-// ─── USE REVEAL ──────────────────────────────────────────────────────────────
+// ─── USE REVEAL ───────────────────────────────────────────────────────────────
 function useReveal() {
   const ref = useRef();
   const [vis, setVis] = useState(false);
@@ -114,7 +98,7 @@ function useReveal() {
           obs.disconnect();
         }
       },
-      { threshold: 0.12 },
+      { threshold: 0.1 },
     );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
@@ -122,7 +106,46 @@ function useReveal() {
   return [ref, vis];
 }
 
-// ─── LIVE MAP ────────────────────────────────────────────────────────────────
+// ─── REVEAL WRAPPER ───────────────────────────────────────────────────────────
+function Reveal({ delay = 0, children, className = "" }) {
+  const [ref, vis] = useReveal();
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: vis ? 1 : 0,
+        transform: vis ? "translateY(0)" : "translateY(32px)",
+        transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ─── HERO ITEM ────────────────────────────────────────────────────────────────
+function HeroItem({ delay, children, className = "" }) {
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setVis(true), delay);
+    return () => clearTimeout(t);
+  }, [delay]);
+  return (
+    <div
+      className={className}
+      style={{
+        opacity: vis ? 1 : 0,
+        transform: vis ? "translateY(0)" : "translateY(28px)",
+        transition: "opacity 0.7s ease, transform 0.7s ease",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ─── LIVE MAP ─────────────────────────────────────────────────────────────────
 function LiveMap() {
   const [ping, setPing] = useState(false);
   useEffect(() => {
@@ -131,13 +154,10 @@ function LiveMap() {
   }, []);
   return (
     <div
+      className="relative rounded-2xl overflow-hidden h-48 sm:h-52"
       style={{
-        position: "relative",
-        borderRadius: 18,
-        overflow: "hidden",
         background: "#050D1A",
         border: "1px solid rgba(96,165,250,0.15)",
-        height: 200,
       }}
     >
       <svg
@@ -182,14 +202,6 @@ function LiveMap() {
           fill="none"
           opacity="0.5"
         />
-        <path
-          d="M70,75 Q105,95 130,80 Q160,65 180,108"
-          stroke="#2563EB"
-          strokeWidth="1.5"
-          fill="none"
-          strokeDasharray="5 3"
-          opacity="0.5"
-        />
         <circle cx="210" cy="108" r="58" fill="#22C55E" opacity="0.04" />
         <circle
           cx="210"
@@ -207,7 +219,7 @@ function LiveMap() {
           r={ping ? 30 : 18}
           fill="#22C55E"
           opacity={ping ? 0.07 : 0.15}
-          style={{ transition: "r 0.9s ease,opacity 0.9s ease" }}
+          style={{ transition: "r 0.9s ease, opacity 0.9s ease" }}
         />
         <circle cx="210" cy="108" r="8" fill="#22C55E" opacity="0.25" />
         <circle cx="210" cy="108" r="4.5" fill="#22C55E" opacity="0.9" />
@@ -246,44 +258,26 @@ function LiveMap() {
         </text>
       </svg>
       <div
+        className="absolute top-2.5 left-3 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold"
         style={{
-          position: "absolute",
-          top: 10,
-          left: 12,
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
           background: "rgba(0,0,0,0.72)",
           backdropFilter: "blur(8px)",
           border: "1px solid rgba(34,197,94,0.3)",
-          borderRadius: 8,
-          padding: "4px 10px",
-          fontSize: 10,
-          fontWeight: 700,
           color: "#22C55E",
         }}
       >
         <PulseDot color="#22C55E" size={6} /> LIVE
       </div>
       <div
-        style={{
-          position: "absolute",
-          bottom: 10,
-          left: 12,
-          right: 12,
-          background: "rgba(0,0,0,0.72)",
-          backdropFilter: "blur(8px)",
-          borderRadius: 9,
-          padding: "7px 12px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
+        className="absolute bottom-2.5 left-3 right-3 rounded-xl px-3 py-1.5 flex justify-between items-center"
+        style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(8px)" }}
       >
-        <span style={{ fontSize: 11, color: "#E2E8F0", fontWeight: 600 }}>
+        <span className="text-xs font-semibold" style={{ color: "#E2E8F0" }}>
           📍 Mirpur 10, Dhaka
         </span>
-        <span style={{ fontSize: 9, color: "#4B5563" }}>2s ago</span>
+        <span className="text-xs" style={{ color: "#4B5563" }}>
+          2s ago
+        </span>
       </div>
     </div>
   );
@@ -317,73 +311,42 @@ function HeartRate() {
     .join(" ");
   return (
     <div
+      className="rounded-2xl p-4 sm:p-5"
       style={{
         background: "rgba(239,68,68,0.07)",
         border: "1px solid rgba(239,68,68,0.2)",
-        borderRadius: 18,
-        padding: "18px 20px",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 14,
-        }}
-      >
+      <div className="flex items-center justify-between mb-3">
         <span
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "#6B7280",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-          }}
+          className="text-xs font-bold uppercase tracking-widest"
+          style={{ color: "#6B7280" }}
         >
           Heart Rate
         </span>
         <span
+          className="text-xs font-bold rounded-full px-2 py-0.5"
           style={{
-            fontSize: 9,
-            fontWeight: 700,
             color: "#22C55E",
             background: "rgba(34,197,94,0.1)",
             border: "1px solid rgba(34,197,94,0.25)",
-            borderRadius: 20,
-            padding: "2px 8px",
           }}
         >
           ● Normal
         </span>
       </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          gap: 6,
-          marginBottom: 12,
-        }}
-      >
+      <div className="flex items-baseline gap-1.5 mb-3">
         <span
-          style={{
-            fontSize: 42,
-            fontWeight: 900,
-            color: "#EF4444",
-            lineHeight: 1,
-            transition: "all 0.5s",
-          }}
+          className="text-4xl font-black leading-none"
+          style={{ color: "#EF4444", transition: "all 0.5s" }}
         >
           {bpm}
         </span>
-        <span style={{ fontSize: 13, color: "#6B7280", fontWeight: 600 }}>
+        <span className="text-sm font-semibold" style={{ color: "#6B7280" }}>
           BPM
         </span>
       </div>
-      <svg
-        viewBox="0 0 260 52"
-        style={{ width: "100%", height: 52, display: "block" }}
-      >
+      <svg viewBox="0 0 260 52" className="w-full block" style={{ height: 52 }}>
         <defs>
           <linearGradient id="hg" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#EF4444" stopOpacity="0.25" />
@@ -410,7 +373,7 @@ function HeartRate() {
   );
 }
 
-// ─── DATA ────────────────────────────────────────────────────────────────────
+// ─── DATA ─────────────────────────────────────────────────────────────────────
 const FEATURES = [
   {
     icon: I.gps,
@@ -520,46 +483,154 @@ const REVIEWS = [
   },
 ];
 
-// ─── HERO ANIMATED ITEM WRAPPER ──────────────────────────────────────────────
-// ✅ FIX: uses CSS class with animationDelay only — no mixing with shorthand `animation`
-function HeroItem({ delay, children }) {
-  const [vis, setVis] = useState(false);
+const STEPS = [
+  {
+    n: "01",
+    title: "Wear the Device",
+    desc: "The child wears the lightweight ESP32 wearable. GPS, heart-rate sensor, and SIM activate automatically at startup.",
+    color: "#A78BFA",
+    emoji: "⌚",
+  },
+  {
+    n: "02",
+    title: "Monitor in Real Time",
+    desc: "The parent dashboard shows live GPS, health vitals, battery, and signal — refreshed every 10 seconds via the cloud.",
+    color: "#60A5FA",
+    emoji: "📱",
+  },
+  {
+    n: "03",
+    title: "Respond Instantly",
+    desc: "SOS, geofence breaches, or AI anomalies trigger simultaneous notifications to all emergency contacts within seconds.",
+    color: "#22C55E",
+    emoji: "🛡️",
+  },
+];
+
+// ─── NAV ──────────────────────────────────────────────────────────────────────
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setVis(true), delay);
-    return () => clearTimeout(t);
-  }, [delay]);
+    const fn = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
   return (
-    <div
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        opacity: vis ? 1 : 0,
-        transform: vis ? "translateY(0)" : "translateY(28px)",
-        transition: `opacity 0.7s ease, transform 0.7s ease`,
+        background: scrolled ? "rgba(6,12,22,0.92)" : "transparent",
+        backdropFilter: scrolled ? "blur(20px)" : "none",
+        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none",
       }}
     >
-      {children}
-    </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 sm:h-18">
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+            style={{ background: "linear-gradient(135deg,#6D28D9,#2563EB)" }}
+          >
+            🛡️
+          </div>
+          <span
+            className="text-sm font-black tracking-tight"
+            style={{
+              background: "linear-gradient(90deg,#A78BFA,#60A5FA)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            SafeGuard
+          </span>
+        </div>
+        {/* Desktop links */}
+        <div className="hidden md:flex items-center gap-6">
+          {["Features", "How it Works", "Tech Stack", "Reviews"].map((l) => (
+            <a
+              key={l}
+              href="#"
+              className="text-sm font-medium transition-colors duration-200 hover:text-white"
+              style={{ color: "#6B7280" }}
+            >
+              {l}
+            </a>
+          ))}
+        </div>
+        {/* Desktop CTA */}
+        <div className="hidden md:flex items-center gap-3">
+          <a
+            href="#"
+            className="text-sm font-semibold transition-colors hover:text-white"
+            style={{ color: "#9CA3AF" }}
+          >
+            Sign in
+          </a>
+          <a
+            href="#"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:brightness-110 hover:-translate-y-px"
+            style={{ background: "linear-gradient(135deg,#6D28D9,#2563EB)" }}
+          >
+            Get Started
+          </a>
+        </div>
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden flex flex-col gap-1.5 p-1.5"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle menu"
+        >
+          <span
+            className={`block w-5 h-0.5 bg-gray-400 transition-all duration-300 ${menuOpen ? "rotate-45 translate-y-2" : ""}`}
+          />
+          <span
+            className={`block w-5 h-0.5 bg-gray-400 transition-all duration-300 ${menuOpen ? "opacity-0" : ""}`}
+          />
+          <span
+            className={`block w-5 h-0.5 bg-gray-400 transition-all duration-300 ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`}
+          />
+        </button>
+      </div>
+      {/* Mobile menu */}
+      <div
+        className="md:hidden overflow-hidden transition-all duration-300"
+        style={{
+          maxHeight: menuOpen ? 300 : 0,
+          background: "rgba(6,12,22,0.97)",
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        <div
+          className="px-4 py-4 flex flex-col gap-3 border-t"
+          style={{ borderColor: "rgba(255,255,255,0.06)" }}
+        >
+          {["Features", "How it Works", "Tech Stack", "Reviews"].map((l) => (
+            <a
+              key={l}
+              href="#"
+              className="text-sm font-medium py-2"
+              style={{ color: "#9CA3AF" }}
+              onClick={() => setMenuOpen(false)}
+            >
+              {l}
+            </a>
+          ))}
+          <a
+            href="#"
+            className="mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white"
+            style={{ background: "linear-gradient(135deg,#6D28D9,#2563EB)" }}
+          >
+            Get Started Free
+          </a>
+        </div>
+      </div>
+    </nav>
   );
 }
 
-// ─── SECTION REVEAL WRAPPER ──────────────────────────────────────────────────
-function Reveal({ delay = 0, children, style = {} }) {
-  const [ref, vis] = useReveal();
-  return (
-    <div
-      ref={ref}
-      style={{
-        opacity: vis ? 1 : 0,
-        transform: vis ? "translateY(0)" : "translateY(32px)",
-        transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-// ─── LANDING PAGE ─────────────────────────────────────────────────────────────
+// ─── MAIN LANDING PAGE ────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [featRef, featVis] = useReveal();
   const [statsRef, statsVis] = useReveal();
@@ -568,131 +639,102 @@ export default function LandingPage() {
 
   return (
     <main
+      className="min-h-screen overflow-x-hidden"
       style={{
         background: "#060C16",
         color: "#E2E8F0",
         fontFamily: "'DM Sans',system-ui,sans-serif",
-        overflowX: "hidden",
       }}
     >
-      {/* ── GLOBAL KEYFRAMES ── */}
       <style>{`
-        @keyframes lp-ping   { 0%,100%{transform:scale(1);opacity:0.4} 50%{transform:scale(2.4);opacity:0} }
-        @keyframes lp-float  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-        @keyframes lp-spin   { to{transform:rotate(360deg)} }
-        @keyframes lp-spin-r { to{transform:rotate(-360deg)} }
-        @keyframes lp-shimmer{ 0%{background-position:200% center} 100%{background-position:-200% center} }
-        @keyframes lp-blink  { 0%,100%{opacity:1} 50%{opacity:0.25} }
-        @keyframes lp-slide  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-        .lp-hover-lift { transition:transform 0.25s ease,box-shadow 0.25s ease; }
-        .lp-hover-lift:hover { transform:translateY(-6px); box-shadow:0 24px 48px rgba(0,0,0,0.4); }
-        .lp-btn:hover { filter:brightness(1.08); transform:translateY(-2px); }
-        .lp-btn { transition:filter 0.2s,transform 0.2s; }
-        .lp-ghost:hover { background:rgba(255,255,255,0.09) !important; }
-        .lp-ghost { transition:background 0.2s; }
-        * { box-sizing:border-box; }
+        @keyframes sg-shimmer { 0%{background-position:200% center} 100%{background-position:-200% center} }
+        @keyframes sg-float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+        @keyframes sg-spin    { to{transform:rotate(360deg)} }
+        @keyframes sg-spin-r  { to{transform:rotate(-360deg)} }
+        .sg-shimmer { animation: sg-shimmer 4.5s linear infinite; background-size: 300% auto; }
+        .sg-float   { animation: sg-float 4s ease-in-out infinite; }
+        .sg-spin    { animation: sg-spin 14s linear infinite; }
+        .sg-spin-r  { animation: sg-spin-r 22s linear infinite; }
+        .sg-card    { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .sg-card:hover { transform: translateY(-6px); box-shadow: 0 24px 48px rgba(0,0,0,0.4); }
+        .sg-btn     { transition: filter 0.2s, transform 0.2s; }
+        .sg-btn:hover { filter: brightness(1.08); transform: translateY(-2px); }
+        .sg-ghost   { transition: background 0.2s; }
+        .sg-ghost:hover { background: rgba(255,255,255,0.09) !important; }
+        * { box-sizing: border-box; }
       `}</style>
 
-      {/* ── AMBIENT GLOWS ── */}
+      {/* Ambient glows */}
       <div
         aria-hidden="true"
-        style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          zIndex: 0,
-          overflow: "hidden",
-        }}
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
       >
         <div
+          className="absolute rounded-full"
           style={{
-            position: "absolute",
             top: "-15%",
             left: "50%",
             transform: "translateX(-50%)",
-            width: 1000,
-            height: 1000,
-            borderRadius: "50%",
+            width: "min(1000px,150vw)",
+            height: "min(1000px,150vw)",
             background:
               "radial-gradient(circle,rgba(109,40,217,0.13) 0%,transparent 65%)",
           }}
         />
         <div
+          className="absolute rounded-full"
           style={{
-            position: "absolute",
             top: "35%",
             left: "-8%",
-            width: 700,
-            height: 700,
-            borderRadius: "50%",
+            width: "min(700px,100vw)",
+            height: "min(700px,100vw)",
             background:
               "radial-gradient(circle,rgba(37,99,235,0.09) 0%,transparent 65%)",
           }}
         />
         <div
+          className="absolute rounded-full"
           style={{
-            position: "absolute",
             top: "65%",
             right: "-8%",
-            width: 600,
-            height: 600,
-            borderRadius: "50%",
+            width: "min(600px,90vw)",
+            height: "min(600px,90vw)",
             background:
               "radial-gradient(circle,rgba(34,197,94,0.07) 0%,transparent 65%)",
           }}
         />
       </div>
 
-      {/* ── GRID PATTERN ── */}
+      {/* Grid pattern */}
       <div
         aria-hidden="true"
+        className="fixed inset-0 pointer-events-none z-0"
         style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          zIndex: 0,
           backgroundImage:
             "linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px)",
           backgroundSize: "64px 64px",
           maskImage:
-            "radial-gradient(ellipse at 50% 0%, black 20%,transparent 75%)",
+            "radial-gradient(ellipse at 50% 0%,black 20%,transparent 75%)",
           WebkitMaskImage:
-            "radial-gradient(ellipse at 50% 0%, black 20%,transparent 75%)",
+            "radial-gradient(ellipse at 50% 0%,black 20%,transparent 75%)",
         }}
       />
 
-      <div style={{ position: "relative", zIndex: 1 }}>
-        {/* ╔══════════════════════════════════════════════════════╗
-            ║                   HERO SECTION                      ║
-            ╚══════════════════════════════════════════════════════╝ */}
-        <section
-          style={{
-            minHeight: "100vh",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "130px 24px 80px",
-            textAlign: "center",
-          }}
-        >
+      <Nav />
+
+      <div className="relative z-10">
+        {/* ══════════════════════════════════════════════
+            HERO
+        ══════════════════════════════════════════════ */}
+        <section className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-28 pb-16 sm:pt-32 sm:pb-20 text-center">
           {/* Badge */}
-          <HeroItem delay={80}>
+          <HeroItem delay={80} className="mb-6 sm:mb-8">
             <div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-widest"
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "7px 18px",
-                borderRadius: 24,
                 background: "rgba(34,197,94,0.08)",
                 border: "1px solid rgba(34,197,94,0.28)",
-                fontSize: 11,
-                fontWeight: 800,
                 color: "#22C55E",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                marginBottom: 30,
               }}
             >
               <PulseDot color="#22C55E" size={7} /> IoT Child Safety —
@@ -701,30 +743,25 @@ export default function LandingPage() {
           </HeroItem>
 
           {/* H1 */}
-          <HeroItem delay={200}>
+          <HeroItem delay={200} className="mb-5 sm:mb-6">
             <h1
+              className="font-black leading-none tracking-tighter"
               style={{
-                fontSize: "clamp(2.8rem,7.5vw,5.5rem)",
-                fontWeight: 900,
-                lineHeight: 1.04,
+                fontSize: "clamp(2.4rem,8vw,5.5rem)",
                 letterSpacing: "-0.045em",
-                margin: "0 0 26px",
-                maxWidth: 860,
               }}
             >
-              <span style={{ display: "block", color: "#F1F5F9" }}>
+              <span className="block" style={{ color: "#F1F5F9" }}>
                 Keep Your Child
               </span>
               <span
+                className="block sg-shimmer"
                 style={{
-                  display: "block",
                   background:
                     "linear-gradient(90deg,#A78BFA,#60A5FA,#34D399,#A78BFA)",
-                  backgroundSize: "300% auto",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
-                  animation: "lp-shimmer 4.5s linear infinite",
                 }}
               >
                 Safe. Always.
@@ -733,88 +770,48 @@ export default function LandingPage() {
           </HeroItem>
 
           {/* Subtitle */}
-          <HeroItem delay={360}>
+          <HeroItem delay={360} className="mb-8 sm:mb-10">
             <p
-              style={{
-                fontSize: "clamp(1rem,2.3vw,1.18rem)",
-                color: "#6B7280",
-                maxWidth: 560,
-                lineHeight: 1.8,
-                margin: "0 0 44px",
-              }}
+              className="text-base sm:text-lg leading-relaxed max-w-xl mx-auto"
+              style={{ color: "#6B7280" }}
             >
               SafeGuard combines an{" "}
-              <strong style={{ color: "#9CA3AF", fontWeight: 700 }}>
-                ESP32 IoT wearable
-              </strong>
-              , real-time GPS, biometric health monitoring, and TensorFlow.js
+              <strong style={{ color: "#9CA3AF" }}>ESP32 IoT wearable</strong>,
+              real-time GPS, biometric health monitoring, and TensorFlow.js
               anomaly detection into one parent dashboard.
             </p>
           </HeroItem>
 
           {/* CTAs */}
-          <HeroItem delay={500}>
-            <div
-              style={{
-                display: "flex",
-                gap: 14,
-                justifyContent: "center",
-                flexWrap: "wrap",
-                marginBottom: 48,
-              }}
-            >
-              <Link
-                href="/auth/register"
-                className="lp-btn"
+          <HeroItem delay={500} className="mb-8 sm:mb-10">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <a
+                href="#"
+                className="sg-btn flex items-center gap-2.5 px-7 py-4 rounded-2xl text-sm sm:text-base font-extrabold text-white w-full sm:w-auto justify-center"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "15px 34px",
-                  borderRadius: 14,
-                  fontSize: 15,
-                  fontWeight: 800,
-                  color: "white",
-                  textDecoration: "none",
                   background: "linear-gradient(135deg,#6D28D9,#2563EB)",
                   boxShadow: "0 0 40px rgba(109,40,217,0.45)",
                 }}
               >
                 <Icon d={I.shield} size={17} color="white" /> Get Started Free
-              </Link>
-              <Link
-                href="/dashboard"
-                className="lp-ghost"
+              </a>
+              <a
+                href="#"
+                className="sg-ghost flex items-center gap-2 px-6 py-4 rounded-2xl text-sm sm:text-base font-bold w-full sm:w-auto justify-center"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "15px 28px",
-                  borderRadius: 14,
-                  fontSize: 15,
-                  fontWeight: 700,
                   color: "#9CA3AF",
-                  textDecoration: "none",
                   background: "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(255,255,255,0.1)",
                 }}
               >
                 Live Demo <Icon d={I.arrowR} size={16} />
-              </Link>
+              </a>
             </div>
           </HeroItem>
 
           {/* Status pills */}
-          <HeroItem delay={640}>
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                justifyContent: "center",
-                flexWrap: "wrap",
-                marginBottom: 70,
-              }}
-            >
+          <HeroItem delay={640} className="mb-12 sm:mb-16">
+            <div className="flex flex-wrap gap-2 justify-center">
               {[
                 { label: "SAFE", color: "#22C55E", dot: true },
                 { label: "🔋 78%", color: "#60A5FA" },
@@ -823,16 +820,10 @@ export default function LandingPage() {
               ].map((s) => (
                 <div
                   key={s.label}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "6px 16px",
-                    borderRadius: 24,
                     background: s.color + "0d",
                     border: `1px solid ${s.color}28`,
-                    fontSize: 11,
-                    fontWeight: 700,
                     color: s.color,
                   }}
                 >
@@ -843,242 +834,174 @@ export default function LandingPage() {
             </div>
           </HeroItem>
 
-          {/* ── DASHBOARD MOCKUP ──
-              ✅ FIX: No `animation` shorthand mixed with `animationDelay`.
-              Uses a single `transition` on the wrapper instead. */}
-          <HeroItem delay={820}>
-            <div style={{ width: "100%", maxWidth: 1020 }}>
+          {/* Dashboard mockup */}
+          <HeroItem delay={820} className="w-full max-w-5xl mx-auto">
+            <div
+              className="rounded-3xl p-0.5"
+              style={{
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.09)",
+                boxShadow: "0 50px 100px rgba(0,0,0,0.65)",
+              }}
+            >
               <div
-                style={{
-                  background: "rgba(255,255,255,0.025)",
-                  border: "1px solid rgba(255,255,255,0.09)",
-                  borderRadius: 24,
-                  padding: 3,
-                  boxShadow: "0 50px 100px rgba(0,0,0,0.65)",
-                }}
+                className="rounded-3xl overflow-hidden"
+                style={{ background: "#0D1117" }}
               >
+                {/* Browser chrome */}
                 <div
+                  className="flex items-center gap-2 px-4 py-3"
                   style={{
-                    background: "#0D1117",
-                    borderRadius: 22,
-                    overflow: "hidden",
+                    background: "#080E18",
+                    borderBottom: "1px solid rgba(255,255,255,0.06)",
                   }}
                 >
-                  {/* Browser chrome */}
+                  {["#EF4444", "#F59E0B", "#22C55E"].map((c) => (
+                    <div
+                      key={c}
+                      className="rounded-full opacity-70"
+                      style={{ width: 10, height: 10, background: c }}
+                    />
+                  ))}
                   <div
+                    className="ml-2 rounded-md px-3 py-1 text-xs"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      color: "#4B5563",
+                    }}
+                  >
+                    safeguard.vercel.app/dashboard
+                  </div>
+                </div>
+                {/* Dashboard layout */}
+                <div className="flex min-h-[320px] sm:min-h-[400px]">
+                  {/* Sidebar — hidden on mobile, shown on sm+ */}
+                  <div
+                    className="hidden sm:block w-44 md:w-52 flex-shrink-0 p-3"
                     style={{
                       background: "#080E18",
-                      borderBottom: "1px solid rgba(255,255,255,0.06)",
-                      padding: "11px 18px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
+                      borderRight: "1px solid rgba(255,255,255,0.05)",
                     }}
                   >
-                    {["#EF4444", "#F59E0B", "#22C55E"].map((c) => (
-                      <div
-                        key={c}
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          background: c,
-                          opacity: 0.7,
-                        }}
-                      />
-                    ))}
                     <div
+                      className="flex items-center gap-2 px-2 pb-3 mb-2"
                       style={{
-                        marginLeft: 8,
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        borderRadius: 6,
-                        padding: "3px 14px",
-                        fontSize: 10,
-                        color: "#4B5563",
-                      }}
-                    >
-                      safeguard.vercel.app/dashboard
-                    </div>
-                  </div>
-                  {/* Layout */}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "196px 1fr",
-                      minHeight: 400,
-                    }}
-                  >
-                    {/* Sidebar */}
-                    <div
-                      style={{
-                        background: "#080E18",
-                        borderRight: "1px solid rgba(255,255,255,0.05)",
-                        padding: "16px 10px",
+                        borderBottom: "1px solid rgba(255,255,255,0.05)",
                       }}
                     >
                       <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "0 8px 14px",
-                          borderBottom: "1px solid rgba(255,255,255,0.05)",
-                          marginBottom: 10,
+                          background: "linear-gradient(135deg,#6D28D9,#2563EB)",
                         }}
                       >
-                        <div
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 8,
-                            background:
-                              "linear-gradient(135deg,#6D28D9,#2563EB)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 13,
-                          }}
-                        >
-                          🛡️
-                        </div>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 900,
-                            background:
-                              "linear-gradient(90deg,#A78BFA,#60A5FA)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                          }}
-                        >
-                          SafeGuard
-                        </span>
+                        🛡️
                       </div>
+                      <span
+                        className="text-xs font-black"
+                        style={{
+                          background: "linear-gradient(90deg,#A78BFA,#60A5FA)",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          backgroundClip: "text",
+                        }}
+                      >
+                        SafeGuard
+                      </span>
+                    </div>
+                    {[
+                      { label: "Overview", icon: "🛡️", active: true },
+                      { label: "Tracking", icon: "🗺️" },
+                      { label: "Health", icon: "💓" },
+                      { label: "Alerts", icon: "🚨", badge: 1 },
+                      { label: "Zones", icon: "📍" },
+                      { label: "Contacts", icon: "📞" },
+                    ].map((n) => (
+                      <div
+                        key={n.label}
+                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg mb-0.5 text-xs font-semibold"
+                        style={{
+                          background: n.active
+                            ? "rgba(109,40,217,0.15)"
+                            : "transparent",
+                          border: n.active
+                            ? "1px solid rgba(109,40,217,0.3)"
+                            : "1px solid transparent",
+                          color: n.active ? "#A78BFA" : "#4B5563",
+                        }}
+                      >
+                        <span className="text-sm">{n.icon}</span>
+                        {n.label}
+                        {n.badge && (
+                          <span
+                            className="ml-auto text-white rounded-lg px-1 py-0.5 text-xs font-black"
+                            style={{ background: "#EF4444", fontSize: 8 }}
+                          >
+                            {n.badge}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {/* Content */}
+                  <div
+                    className="flex-1 p-3 sm:p-4"
+                    style={{ background: "#0a1020" }}
+                  >
+                    {/* Status cards */}
+                    <div className="grid grid-cols-3 gap-2 mb-3">
                       {[
-                        { label: "Overview", icon: "🛡️", active: true },
-                        { label: "Tracking", icon: "🗺️", active: false },
-                        { label: "Health", icon: "💓", active: false },
-                        { label: "Alerts", icon: "🚨", badge: 1 },
-                        { label: "Zones", icon: "📍", active: false },
-                        { label: "Contacts", icon: "📞", active: false },
-                      ].map((n) => (
+                        {
+                          label: "Device Status",
+                          value: "SAFE",
+                          icon: "🟢",
+                          color: "#22C55E",
+                        },
+                        {
+                          label: "Battery",
+                          value: "78%",
+                          icon: "🔋",
+                          color: "#60A5FA",
+                        },
+                        {
+                          label: "Signal",
+                          value: "Strong",
+                          icon: "📡",
+                          color: "#A78BFA",
+                        },
+                      ].map((s) => (
                         <div
-                          key={n.label}
+                          key={s.label}
+                          className="rounded-xl p-2.5 sm:p-3"
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            padding: "7px 10px",
-                            borderRadius: 9,
-                            background: n.active
-                              ? "rgba(109,40,217,0.15)"
-                              : "transparent",
-                            border: n.active
-                              ? "1px solid rgba(109,40,217,0.3)"
-                              : "1px solid transparent",
-                            marginBottom: 2,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: n.active ? "#A78BFA" : "#4B5563",
+                            background: "#0D1117",
+                            border: `1px solid ${s.color}18`,
+                            borderTop: `2px solid ${s.color}`,
                           }}
                         >
-                          <span style={{ fontSize: 12 }}>{n.icon}</span>
-                          {n.label}
-                          {n.badge && (
-                            <span
-                              style={{
-                                marginLeft: "auto",
-                                background: "#EF4444",
-                                color: "white",
-                                borderRadius: 8,
-                                fontSize: 8,
-                                padding: "1px 5px",
-                                fontWeight: 800,
-                              }}
-                            >
-                              {n.badge}
-                            </span>
-                          )}
+                          <div className="text-base sm:text-lg mb-1">
+                            {s.icon}
+                          </div>
+                          <div
+                            className="text-sm sm:text-base font-black"
+                            style={{ color: s.color }}
+                          >
+                            {s.value}
+                          </div>
+                          <div
+                            className="text-xs mt-0.5 hidden sm:block"
+                            style={{ color: "#4B5563", fontSize: 9 }}
+                          >
+                            {s.label}
+                          </div>
                         </div>
                       ))}
                     </div>
-                    {/* Content */}
-                    <div
-                      style={{ padding: "16px 18px", background: "#0a1020" }}
-                    >
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr 1fr",
-                          gap: 10,
-                          marginBottom: 12,
-                        }}
-                      >
-                        {[
-                          {
-                            label: "Device Status",
-                            value: "SAFE",
-                            icon: "🟢",
-                            color: "#22C55E",
-                          },
-                          {
-                            label: "Battery",
-                            value: "78%",
-                            icon: "🔋",
-                            color: "#60A5FA",
-                          },
-                          {
-                            label: "Signal",
-                            value: "Strong",
-                            icon: "📡",
-                            color: "#A78BFA",
-                          },
-                        ].map((s) => (
-                          <div
-                            key={s.label}
-                            style={{
-                              background: "#0D1117",
-                              border: `1px solid ${s.color}18`,
-                              borderTop: `2px solid ${s.color}`,
-                              borderRadius: 12,
-                              padding: "11px 13px",
-                            }}
-                          >
-                            <div style={{ fontSize: 16, marginBottom: 4 }}>
-                              {s.icon}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: 16,
-                                fontWeight: 800,
-                                color: s.color,
-                              }}
-                            >
-                              {s.value}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: 9,
-                                color: "#4B5563",
-                                marginTop: 2,
-                              }}
-                            >
-                              {s.label}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 12,
-                        }}
-                      >
-                        <LiveMap />
-                        <HeartRate />
-                      </div>
+                    {/* Map + Heart rate */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <LiveMap />
+                      <HeartRate />
                     </div>
                   </div>
                 </div>
@@ -1087,48 +1010,34 @@ export default function LandingPage() {
           </HeroItem>
         </section>
 
-        {/* ╔══════════════════════════════════════════════════════╗
-            ║                   STATS STRIP                       ║
-            ╚══════════════════════════════════════════════════════╝ */}
+        {/* ══════════════════════════════════════════════
+            STATS
+        ══════════════════════════════════════════════ */}
         <section
           ref={statsRef}
-          style={{ padding: "72px 24px", maxWidth: 1100, margin: "0 auto" }}
+          className="px-4 sm:px-6 py-16 sm:py-20 max-w-6xl mx-auto"
         >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4,1fr)",
-              gap: 16,
-            }}
-          >
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {STATS.map((s, i) => (
               <div
                 key={s.label}
                 style={{
                   opacity: statsVis ? 1 : 0,
                   transform: statsVis ? "translateY(0)" : "translateY(28px)",
-                  transition: `opacity 0.65s ease ${i * 0.1}s,transform 0.65s ease ${i * 0.1}s`,
+                  transition: `opacity 0.65s ease ${i * 0.1}s, transform 0.65s ease ${i * 0.1}s`,
                 }}
               >
                 <div
-                  className="lp-hover-lift"
+                  className="sg-card rounded-2xl p-5 sm:p-7 text-center"
                   style={{
                     background: "rgba(255,255,255,0.025)",
                     border: `1px solid ${s.color}20`,
                     borderTop: `2px solid ${s.color}`,
-                    borderRadius: 20,
-                    padding: "28px 20px",
-                    textAlign: "center",
                   }}
                 >
                   <div
-                    style={{
-                      fontSize: 44,
-                      fontWeight: 900,
-                      color: s.color,
-                      letterSpacing: "-0.04em",
-                      lineHeight: 1,
-                    }}
+                    className="text-4xl sm:text-5xl font-black leading-none mb-2 tracking-tighter"
+                    style={{ color: s.color }}
                   >
                     {statsVis ? (
                       <Counter target={s.value} suffix={s.suffix} />
@@ -1137,12 +1046,8 @@ export default function LandingPage() {
                     )}
                   </div>
                   <div
-                    style={{
-                      fontSize: 12,
-                      color: "#6B7280",
-                      fontWeight: 600,
-                      marginTop: 8,
-                    }}
+                    className="text-xs font-semibold"
+                    style={{ color: "#6B7280" }}
                   >
                     {s.label}
                   </div>
@@ -1152,53 +1057,26 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ╔══════════════════════════════════════════════════════╗
-            ║            LIVE ALERTS + DEVICE MOCKUP              ║
-            ╚══════════════════════════════════════════════════════╝ */}
-        <section
-          style={{
-            padding: "60px 24px 100px",
-            maxWidth: 1100,
-            margin: "0 auto",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 56,
-              alignItems: "center",
-            }}
-          >
+        {/* ══════════════════════════════════════════════
+            LIVE ALERTS + DEVICE MOCKUP
+        ══════════════════════════════════════════════ */}
+        <section className="px-4 sm:px-6 py-12 sm:py-20 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left */}
             <Reveal>
               <div
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-5"
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "5px 14px",
-                  borderRadius: 20,
                   background: "rgba(239,68,68,0.1)",
                   border: "1px solid rgba(239,68,68,0.3)",
-                  fontSize: 11,
-                  fontWeight: 800,
                   color: "#EF4444",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  marginBottom: 20,
                 }}
               >
                 <PulseDot color="#EF4444" size={7} /> Live Alerts
               </div>
               <h2
-                style={{
-                  fontSize: "clamp(1.9rem,3.5vw,2.9rem)",
-                  fontWeight: 900,
-                  lineHeight: 1.08,
-                  letterSpacing: "-0.035em",
-                  margin: "0 0 18px",
-                }}
+                className="font-black leading-tight mb-4 tracking-tighter"
+                style={{ fontSize: "clamp(1.75rem,4vw,2.75rem)" }}
               >
                 Instant alerts,
                 <br />
@@ -1207,90 +1085,61 @@ export default function LandingPage() {
                     background: "linear-gradient(90deg,#A78BFA,#60A5FA)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
                   }}
                 >
                   zero delays
                 </span>
               </h2>
               <p
-                style={{
-                  fontSize: 14.5,
-                  color: "#6B7280",
-                  lineHeight: 1.78,
-                  marginBottom: 28,
-                }}
+                className="text-sm sm:text-base leading-relaxed mb-6 sm:mb-8"
+                style={{ color: "#6B7280" }}
               >
                 SOS, geofence exit, or AI anomaly — all 5 emergency contacts get
                 notified in seconds with GPS coordinates and a one-tap live
                 tracking link.
               </p>
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 10 }}
-              >
+              <div className="flex flex-col gap-2.5">
                 {ALERTS.map((a) => (
                   <div
                     key={a.type}
+                    className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl"
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "12px 16px",
-                      borderRadius: 14,
                       background: a.color + "0b",
                       border: `1px solid ${a.color}28`,
                       borderLeft: `3px solid ${a.color}`,
                     }}
                   >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 12 }}
-                    >
+                    <div className="flex items-center gap-3">
                       <div
-                        style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: 10,
-                          background: a.color + "18",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 15,
-                        }}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
+                        style={{ background: a.color + "18" }}
                       >
                         {a.emoji}
                       </div>
                       <div>
                         <div
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: "#E2E8F0",
-                          }}
+                          className="text-sm font-bold"
+                          style={{ color: "#E2E8F0" }}
                         >
                           {a.type} Alert
                         </div>
                         <div
-                          style={{
-                            fontSize: 10,
-                            color: "#6B7280",
-                            marginTop: 1,
-                          }}
+                          className="text-xs mt-0.5"
+                          style={{ color: "#6B7280" }}
                         >
                           {a.loc} · {a.time}
                         </div>
                       </div>
                     </div>
                     <span
+                      className="text-xs font-bold rounded-full px-2.5 py-1 whitespace-nowrap flex-shrink-0 ml-2"
                       style={{
-                        fontSize: 9,
-                        fontWeight: 700,
                         color: a.status === "Resolved" ? "#22C55E" : "#F59E0B",
                         background:
                           (a.status === "Resolved" ? "#22C55E" : "#F59E0B") +
                           "14",
                         border: `1px solid ${a.status === "Resolved" ? "#22C55E" : "#F59E0B"}28`,
-                        borderRadius: 20,
-                        padding: "3px 9px",
-                        whiteSpace: "nowrap",
                       }}
                     >
                       {a.status === "Resolved" ? "✓ Resolved" : "● Active"}
@@ -1299,285 +1148,183 @@ export default function LandingPage() {
                 ))}
               </div>
             </Reveal>
-            {/* Right — device */}
-            <Reveal delay={0.15}>
+
+            {/* Right — device mockup */}
+            <Reveal delay={0.15} className="flex flex-col items-center gap-6">
+              <div className="relative sg-float">
+                <div
+                  className="rounded-full flex flex-col items-center justify-center relative overflow-hidden"
+                  style={{
+                    width: 200,
+                    height: 200,
+                    background: "linear-gradient(145deg,#0f1b30,#1c2e50)",
+                    border: "3px solid rgba(109,40,217,0.45)",
+                    boxShadow:
+                      "0 0 70px rgba(109,40,217,0.3),inset 0 0 50px rgba(0,0,0,0.5)",
+                  }}
+                >
+                  <div
+                    className="absolute top-3 rounded-sm"
+                    style={{
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: 56,
+                      height: 2,
+                      background: "rgba(109,40,217,0.55)",
+                    }}
+                  />
+                  <div className="text-4xl mb-2">🛡️</div>
+                  <div
+                    className="text-xs font-black tracking-widest"
+                    style={{ color: "#A78BFA" }}
+                  >
+                    SAFEGUARD
+                  </div>
+                  <div
+                    className="text-xs mt-1"
+                    style={{ color: "#4B5563", fontSize: 9 }}
+                  >
+                    ESP32 · NEO-6M · SIM800L
+                  </div>
+                  <div className="absolute bottom-6 flex gap-2.5">
+                    <PulseDot color="#22C55E" size={8} />
+                    <PulseDot color="#60A5FA" size={8} />
+                    <PulseDot color="#EF4444" size={8} />
+                  </div>
+                </div>
+                {/* Orbit rings */}
+                <div
+                  className="absolute rounded-full sg-spin"
+                  style={{
+                    inset: -22,
+                    border: "1px dashed rgba(109,40,217,0.22)",
+                  }}
+                />
+                <div
+                  className="absolute rounded-full sg-spin-r"
+                  style={{
+                    inset: -44,
+                    border: "1px dashed rgba(37,99,235,0.14)",
+                  }}
+                />
+              </div>
+              {/* Spec table */}
               <div
+                className="rounded-2xl p-4 w-full max-w-xs"
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 22,
+                  background: "rgba(255,255,255,0.025)",
+                  border: "1px solid rgba(255,255,255,0.07)",
                 }}
               >
-                {/* Wearable circle */}
-                <div
-                  style={{
-                    position: "relative",
-                    animation: "lp-float 4s ease-in-out infinite",
-                  }}
-                >
+                {[
+                  { k: "MCU", v: "ESP32 Dual-Core 240MHz" },
+                  { k: "GPS", v: "NEO-6M · 10s Update" },
+                  { k: "GSM", v: "SIM800L · 4G LTE" },
+                  { k: "Sensor", v: "MAX30102 · HR + SpO2" },
+                  { k: "Battery", v: "3.7V LiPo · 72h Life" },
+                ].map((s, i) => (
                   <div
+                    key={s.k}
+                    className="flex justify-between items-center py-2"
                     style={{
-                      width: 210,
-                      height: 210,
-                      borderRadius: "50%",
-                      background: "linear-gradient(145deg,#0f1b30,#1c2e50)",
-                      border: "3px solid rgba(109,40,217,0.45)",
-                      boxShadow:
-                        "0 0 70px rgba(109,40,217,0.3),inset 0 0 50px rgba(0,0,0,0.5)",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      position: "relative",
-                      overflow: "hidden",
+                      borderBottom:
+                        i < 4 ? "1px solid rgba(255,255,255,0.045)" : "none",
                     }}
                   >
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 12,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: 60,
-                        height: 2,
-                        background: "rgba(109,40,217,0.55)",
-                        borderRadius: 2,
-                      }}
-                    />
-                    <div style={{ fontSize: 40, marginBottom: 8 }}>🛡️</div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 900,
-                        color: "#A78BFA",
-                        letterSpacing: "0.1em",
-                      }}
+                    <span
+                      className="text-xs font-bold uppercase tracking-wider"
+                      style={{ color: "#6B7280" }}
                     >
-                      SAFEGUARD
-                    </div>
-                    <div
-                      style={{ fontSize: 9, color: "#4B5563", marginTop: 5 }}
+                      {s.k}
+                    </span>
+                    <span
+                      className="text-xs font-semibold"
+                      style={{ color: "#E2E8F0" }}
                     >
-                      ESP32 · NEO-6M · SIM800L
-                    </div>
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: 24,
-                        display: "flex",
-                        gap: 10,
-                      }}
-                    >
-                      <PulseDot color="#22C55E" size={8} />
-                      <PulseDot color="#60A5FA" size={8} />
-                      <PulseDot color="#EF4444" size={8} />
-                    </div>
+                      {s.v}
+                    </span>
                   </div>
-                  {/* Orbit rings — use CSS animation property directly, no delay conflict */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: -22,
-                      borderRadius: "50%",
-                      border: "1px dashed rgba(109,40,217,0.22)",
-                      animation: "lp-spin 14s linear infinite",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: -44,
-                      borderRadius: "50%",
-                      border: "1px dashed rgba(37,99,235,0.14)",
-                      animation: "lp-spin-r 22s linear infinite",
-                    }}
-                  />
-                </div>
-                {/* Spec table */}
-                <div
-                  style={{
-                    background: "rgba(255,255,255,0.025)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    borderRadius: 16,
-                    padding: "14px 20px",
-                    width: "100%",
-                    maxWidth: 310,
-                  }}
-                >
-                  {[
-                    { k: "MCU", v: "ESP32 Dual-Core 240MHz" },
-                    { k: "GPS", v: "NEO-6M · 10s Update" },
-                    { k: "GSM", v: "SIM800L · 4G LTE" },
-                    { k: "Sensor", v: "MAX30102 · HR + SpO2" },
-                    { k: "Battery", v: "3.7V LiPo · 72h Life" },
-                  ].map((s, i) => (
-                    <div
-                      key={s.k}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "7px 0",
-                        borderBottom:
-                          i < 4 ? "1px solid rgba(255,255,255,0.045)" : "none",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 10,
-                          color: "#6B7280",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.07em",
-                        }}
-                      >
-                        {s.k}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "#E2E8F0",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {s.v}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
             </Reveal>
           </div>
         </section>
 
-        {/* ╔══════════════════════════════════════════════════════╗
-            ║                  FEATURES GRID                      ║
-            ╚══════════════════════════════════════════════════════╝ */}
+        {/* ══════════════════════════════════════════════
+            FEATURES GRID
+        ══════════════════════════════════════════════ */}
         <section
           ref={featRef}
-          style={{
-            padding: "80px 24px 100px",
-            maxWidth: 1100,
-            margin: "0 auto",
-          }}
+          className="px-4 sm:px-6 py-16 sm:py-24 max-w-6xl mx-auto"
         >
-          <div style={{ textAlign: "center", marginBottom: 56 }}>
+          <div className="text-center mb-12 sm:mb-16">
             <Reveal>
               <div
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-4"
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "5px 14px",
-                  borderRadius: 20,
                   background: "rgba(109,40,217,0.1)",
                   border: "1px solid rgba(109,40,217,0.3)",
-                  fontSize: 11,
-                  fontWeight: 800,
                   color: "#A78BFA",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  marginBottom: 18,
                 }}
               >
                 <Icon d={I.star} size={12} color="#A78BFA" /> Platform Features
               </div>
               <h2
-                style={{
-                  fontSize: "clamp(1.9rem,4vw,3rem)",
-                  fontWeight: 900,
-                  lineHeight: 1.1,
-                  letterSpacing: "-0.035em",
-                  margin: 0,
-                }}
+                className="font-black leading-tight tracking-tighter"
+                style={{ fontSize: "clamp(1.75rem,4.5vw,3rem)" }}
               >
                 Everything your child's safety needs
               </h2>
             </Reveal>
           </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3,1fr)",
-              gap: 18,
-            }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {FEATURES.map((f, i) => (
               <div
                 key={f.title}
                 style={{
                   opacity: featVis ? 1 : 0,
                   transform: featVis ? "translateY(0)" : "translateY(36px)",
-                  transition: `opacity 0.65s ease ${i * 0.09}s,transform 0.65s ease ${i * 0.09}s`,
+                  transition: `opacity 0.65s ease ${i * 0.09}s, transform 0.65s ease ${i * 0.09}s`,
                 }}
               >
                 <div
-                  className="lp-hover-lift"
+                  className="sg-card rounded-2xl p-6 h-full cursor-default"
                   style={{
                     background: "rgba(255,255,255,0.025)",
                     border: `1px solid ${f.color}22`,
-                    borderRadius: 20,
-                    padding: "26px 24px 28px",
-                    height: "100%",
-                    cursor: "default",
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      marginBottom: 16,
-                    }}
-                  >
+                  <div className="flex items-start justify-between mb-4">
                     <div
+                      className="w-11 h-11 rounded-2xl flex items-center justify-center"
                       style={{
-                        width: 46,
-                        height: 46,
-                        borderRadius: 14,
                         background: f.color + "12",
                         border: `1px solid ${f.color}28`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
                       }}
                     >
                       <Icon d={f.icon} size={21} color={f.color} />
                     </div>
                     <span
+                      className="text-xs font-extrabold rounded-lg px-2 py-1 tracking-wide"
                       style={{
-                        fontSize: 9,
-                        fontWeight: 800,
                         color: f.color,
                         background: f.color + "10",
                         border: `1px solid ${f.color}22`,
-                        borderRadius: 8,
-                        padding: "3px 9px",
-                        letterSpacing: "0.07em",
+                        fontSize: 9,
                       }}
                     >
                       {f.badge}
                     </span>
                   </div>
                   <h3
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 800,
-                      color: "#E2E8F0",
-                      margin: "0 0 9px",
-                      letterSpacing: "-0.02em",
-                    }}
+                    className="text-base font-extrabold mb-2 tracking-tight"
+                    style={{ color: "#E2E8F0" }}
                   >
                     {f.title}
                   </h3>
                   <p
-                    style={{
-                      fontSize: 13,
-                      color: "#6B7280",
-                      lineHeight: 1.7,
-                      margin: 0,
-                    }}
+                    className="text-sm leading-relaxed m-0"
+                    style={{ color: "#6B7280" }}
                   >
                     {f.desc}
                   </p>
@@ -1585,128 +1332,87 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-          <div style={{ textAlign: "center", marginTop: 44 }}>
+          <div className="text-center mt-10">
             <Reveal>
-              <Link
-                href="/features"
-                className="lp-ghost"
+              <a
+                href="#"
+                className="sg-ghost inline-flex items-center gap-2 px-7 py-3 rounded-2xl text-sm font-bold"
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "12px 28px",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontWeight: 700,
                   color: "#A78BFA",
-                  textDecoration: "none",
                   background: "rgba(109,40,217,0.09)",
                   border: "1px solid rgba(109,40,217,0.28)",
                 }}
               >
                 Explore all features{" "}
                 <Icon d={I.arrowR} size={15} color="#A78BFA" />
-              </Link>
+              </a>
             </Reveal>
           </div>
         </section>
 
-        {/* ╔══════════════════════════════════════════════════════╗
-            ║                 TECH STACK BAND                     ║
-            ╚══════════════════════════════════════════════════════╝ */}
+        {/* ══════════════════════════════════════════════
+            TECH STACK
+        ══════════════════════════════════════════════ */}
         <section
           ref={techRef}
+          className="py-16 sm:py-24 px-4 sm:px-6"
           style={{
-            padding: "80px 24px 100px",
             background: "rgba(255,255,255,0.016)",
             borderTop: "1px solid rgba(255,255,255,0.055)",
             borderBottom: "1px solid rgba(255,255,255,0.055)",
           }}
         >
-          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 50 }}>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10 sm:mb-14">
               <Reveal>
                 <div
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-4"
                   style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "5px 14px",
-                    borderRadius: 20,
                     background: "rgba(96,165,250,0.1)",
                     border: "1px solid rgba(96,165,250,0.3)",
-                    fontSize: 11,
-                    fontWeight: 800,
                     color: "#60A5FA",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    marginBottom: 18,
                   }}
                 >
                   <Icon d={I.chip} size={12} color="#60A5FA" /> Tech Stack
                 </div>
                 <h2
-                  style={{
-                    fontSize: "clamp(1.9rem,4vw,2.9rem)",
-                    fontWeight: 900,
-                    letterSpacing: "-0.035em",
-                    margin: 0,
-                  }}
+                  className="font-black leading-tight tracking-tighter"
+                  style={{ fontSize: "clamp(1.75rem,4vw,2.9rem)" }}
                 >
                   Built on battle-tested tech
                 </h2>
               </Reveal>
             </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3,1fr)",
-                gap: 14,
-              }}
-            >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {TECH.map((t, i) => (
                 <div
                   key={t.cat}
                   style={{
                     opacity: techVis ? 1 : 0,
                     transform: techVis ? "translateY(0)" : "translateY(28px)",
-                    transition: `opacity 0.6s ease ${i * 0.08}s,transform 0.6s ease ${i * 0.08}s`,
+                    transition: `opacity 0.6s ease ${i * 0.08}s, transform 0.6s ease ${i * 0.08}s`,
                   }}
                 >
                   <div
-                    className="lp-hover-lift"
+                    className="sg-card rounded-2xl p-4 sm:p-5 flex items-center gap-4"
                     style={{
                       background: "rgba(255,255,255,0.025)",
                       border: "1px solid rgba(255,255,255,0.06)",
-                      borderRadius: 16,
-                      padding: "18px 20px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 16,
                     }}
                   >
-                    <span style={{ fontSize: 26, flexShrink: 0 }}>
+                    <span className="text-2xl sm:text-3xl flex-shrink-0">
                       {t.emoji}
                     </span>
                     <div>
                       <div
-                        style={{
-                          fontSize: 10,
-                          color: "#6B7280",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.1em",
-                          marginBottom: 4,
-                        }}
+                        className="text-xs font-bold uppercase tracking-widest mb-1"
+                        style={{ color: "#6B7280" }}
                       >
                         {t.cat}
                       </div>
                       <div
-                        style={{
-                          fontSize: 12,
-                          color: "#E2E8F0",
-                          fontWeight: 600,
-                        }}
+                        className="text-xs sm:text-sm font-semibold"
+                        style={{ color: "#E2E8F0" }}
                       >
                         {t.val}
                       </div>
@@ -1718,83 +1424,41 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ╔══════════════════════════════════════════════════════╗
-            ║                HOW IT WORKS                         ║
-            ╚══════════════════════════════════════════════════════╝ */}
-        <section
-          style={{ padding: "100px 24px", maxWidth: 860, margin: "0 auto" }}
-        >
-          <div style={{ textAlign: "center", marginBottom: 60 }}>
+        {/* ══════════════════════════════════════════════
+            HOW IT WORKS
+        ══════════════════════════════════════════════ */}
+        <section className="py-16 sm:py-24 px-4 sm:px-6 max-w-3xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
             <Reveal>
               <div
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-4"
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "5px 14px",
-                  borderRadius: 20,
                   background: "rgba(52,211,153,0.1)",
                   border: "1px solid rgba(52,211,153,0.3)",
-                  fontSize: 11,
-                  fontWeight: 800,
                   color: "#34D399",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  marginBottom: 18,
                 }}
               >
                 <Icon d={I.zap} size={12} color="#34D399" /> How it works
               </div>
               <h2
-                style={{
-                  fontSize: "clamp(1.9rem,4vw,2.9rem)",
-                  fontWeight: 900,
-                  letterSpacing: "-0.035em",
-                  margin: 0,
-                }}
+                className="font-black leading-tight tracking-tighter"
+                style={{ fontSize: "clamp(1.75rem,4vw,2.9rem)" }}
               >
                 Protection in 3 simple steps
               </h2>
             </Reveal>
           </div>
-          {[
-            {
-              n: "01",
-              title: "Wear the Device",
-              desc: "The child wears the lightweight ESP32 wearable. GPS, heart-rate sensor, and SIM activate automatically at startup.",
-              color: "#A78BFA",
-              emoji: "⌚",
-            },
-            {
-              n: "02",
-              title: "Monitor in Real Time",
-              desc: "The parent dashboard shows live GPS, health vitals, battery, and signal — refreshed every 10 seconds via the cloud.",
-              color: "#60A5FA",
-              emoji: "📱",
-            },
-            {
-              n: "03",
-              title: "Respond Instantly",
-              desc: "SOS, geofence breaches, or AI anomalies trigger simultaneous notifications to all emergency contacts within seconds.",
-              color: "#22C55E",
-              emoji: "🛡️",
-            },
-          ].map((s, i) => (
+          {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 0.15}>
               <div
-                style={{
-                  display: "flex",
-                  gap: 28,
-                  paddingBottom: i < 2 ? 44 : 0,
-                  position: "relative",
-                }}
+                className="flex gap-5 sm:gap-7 relative"
+                style={{ paddingBottom: i < 2 ? 36 : 0 }}
               >
                 {i < 2 && (
                   <div
+                    className="absolute left-6 sm:left-7 rounded-full"
                     style={{
-                      position: "absolute",
-                      left: 27,
-                      top: 58,
+                      top: 56,
                       bottom: 0,
                       width: 2,
                       background: `linear-gradient(to bottom,${s.color}55,transparent)`,
@@ -1802,53 +1466,30 @@ export default function LandingPage() {
                   />
                 )}
                 <div
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-xl sm:text-2xl flex-shrink-0 z-10"
                   style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
                     background: `${s.color}18`,
                     border: `2px solid ${s.color}45`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 22,
-                    flexShrink: 0,
-                    zIndex: 1,
                   }}
                 >
                   {s.emoji}
                 </div>
-                <div style={{ paddingTop: 10 }}>
+                <div className="pt-2 sm:pt-2.5">
                   <div
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 800,
-                      color: s.color,
-                      letterSpacing: "0.12em",
-                      marginBottom: 6,
-                    }}
+                    className="text-xs font-extrabold tracking-widest mb-1.5"
+                    style={{ color: s.color }}
                   >
                     STEP {s.n}
                   </div>
                   <h3
-                    style={{
-                      fontSize: 21,
-                      fontWeight: 800,
-                      color: "#E2E8F0",
-                      margin: "0 0 9px",
-                      letterSpacing: "-0.025em",
-                    }}
+                    className="text-lg sm:text-xl font-extrabold mb-2 tracking-tight"
+                    style={{ color: "#E2E8F0" }}
                   >
                     {s.title}
                   </h3>
                   <p
-                    style={{
-                      fontSize: 14,
-                      color: "#6B7280",
-                      lineHeight: 1.75,
-                      margin: 0,
-                      maxWidth: 520,
-                    }}
+                    className="text-sm leading-relaxed"
+                    style={{ color: "#6B7280", maxWidth: 480 }}
                   >
                     {s.desc}
                   </p>
@@ -1858,108 +1499,77 @@ export default function LandingPage() {
           ))}
         </section>
 
-        {/* ╔══════════════════════════════════════════════════════╗
-            ║                TESTIMONIALS                         ║
-            ╚══════════════════════════════════════════════════════╝ */}
+        {/* ══════════════════════════════════════════════
+            TESTIMONIALS
+        ══════════════════════════════════════════════ */}
         <section
           ref={reviewRef}
+          className="py-16 sm:py-24 px-4 sm:px-6"
           style={{
-            padding: "80px 24px 100px",
             background: "rgba(109,40,217,0.04)",
             borderTop: "1px solid rgba(109,40,217,0.14)",
             borderBottom: "1px solid rgba(109,40,217,0.14)",
           }}
         >
-          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 50 }}>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10 sm:mb-14">
               <Reveal>
                 <h2
-                  style={{
-                    fontSize: "clamp(1.9rem,4vw,2.9rem)",
-                    fontWeight: 900,
-                    letterSpacing: "-0.035em",
-                    margin: "0 0 10px",
-                  }}
+                  className="font-black leading-tight tracking-tighter mb-2"
+                  style={{ fontSize: "clamp(1.75rem,4vw,2.9rem)" }}
                 >
                   Trusted by families
                 </h2>
-                <p style={{ fontSize: 14, color: "#6B7280", margin: 0 }}>
+                <p className="text-sm" style={{ color: "#6B7280" }}>
                   Real parents. Real peace of mind.
                 </p>
               </Reveal>
             </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3,1fr)",
-                gap: 18,
-              }}
-            >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {REVIEWS.map((r, i) => (
                 <div
                   key={r.name}
                   style={{
                     opacity: reviewVis ? 1 : 0,
                     transform: reviewVis ? "translateY(0)" : "translateY(32px)",
-                    transition: `opacity 0.65s ease ${i * 0.12}s,transform 0.65s ease ${i * 0.12}s`,
+                    transition: `opacity 0.65s ease ${i * 0.12}s, transform 0.65s ease ${i * 0.12}s`,
                   }}
                 >
                   <div
-                    className="lp-hover-lift"
+                    className="sg-card rounded-2xl p-6 h-full"
                     style={{
                       background: "rgba(255,255,255,0.028)",
                       border: "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: 20,
-                      padding: "26px 24px",
-                      height: "100%",
                     }}
                   >
-                    <div style={{ display: "flex", gap: 3, marginBottom: 14 }}>
+                    <div className="flex gap-1 mb-4">
                       {[...Array(5)].map((_, si) => (
                         <Icon key={si} d={I.star} size={14} color="#FBBF24" />
                       ))}
                     </div>
                     <p
-                      style={{
-                        fontSize: 14,
-                        color: "#9CA3AF",
-                        lineHeight: 1.75,
-                        margin: "0 0 20px",
-                        fontStyle: "italic",
-                      }}
+                      className="text-sm leading-relaxed mb-5 italic"
+                      style={{ color: "#9CA3AF" }}
                     >
                       "{r.text}"
                     </p>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 12 }}
-                    >
+                    <div className="flex items-center gap-3">
                       <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black text-white flex-shrink-0"
                         style={{
-                          width: 38,
-                          height: 38,
-                          borderRadius: "50%",
                           background: "linear-gradient(135deg,#6D28D9,#2563EB)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 14,
-                          fontWeight: 800,
-                          color: "white",
                         }}
                       >
                         {r.avatar}
                       </div>
                       <div>
                         <div
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: "#E2E8F0",
-                          }}
+                          className="text-sm font-bold"
+                          style={{ color: "#E2E8F0" }}
                         >
                           {r.name}
                         </div>
-                        <div style={{ fontSize: 11, color: "#6B7280" }}>
+                        <div className="text-xs" style={{ color: "#6B7280" }}>
                           {r.role}
                         </div>
                       </div>
@@ -1971,75 +1581,50 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ╔══════════════════════════════════════════════════════╗
-            ║                   FINAL CTA                         ║
-            ╚══════════════════════════════════════════════════════╝ */}
-        <section
-          style={{
-            padding: "130px 24px 160px",
-            textAlign: "center",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
+        {/* ══════════════════════════════════════════════
+            FINAL CTA
+        ══════════════════════════════════════════════ */}
+        <section className="py-24 sm:py-32 px-4 sm:px-6 text-center relative overflow-hidden">
           <div
             aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
             style={{
-              position: "absolute",
-              inset: 0,
               background:
                 "radial-gradient(ellipse at center,rgba(109,40,217,0.18) 0%,transparent 65%)",
-              pointerEvents: "none",
             }}
           />
-          {/* Decorative rings */}
           <div
             aria-hidden="true"
+            className="absolute rounded-full pointer-events-none"
             style={{
-              position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%,-50%)",
-              width: 600,
-              height: 600,
-              borderRadius: "50%",
+              width: "min(600px,90vw)",
+              height: "min(600px,90vw)",
               border: "1px solid rgba(109,40,217,0.1)",
-              pointerEvents: "none",
             }}
           />
           <div
             aria-hidden="true"
+            className="absolute rounded-full pointer-events-none"
             style={{
-              position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%,-50%)",
-              width: 900,
-              height: 900,
-              borderRadius: "50%",
+              width: "min(900px,140vw)",
+              height: "min(900px,140vw)",
               border: "1px solid rgba(109,40,217,0.06)",
-              pointerEvents: "none",
             }}
           />
 
-          <div style={{ position: "relative", zIndex: 1 }}>
+          <div className="relative z-10 max-w-2xl mx-auto">
             <Reveal>
-              <div
-                style={{
-                  fontSize: 56,
-                  marginBottom: 24,
-                  animation: "lp-float 3.5s ease-in-out infinite",
-                }}
-              >
-                🛡️
-              </div>
+              <div className="text-5xl sm:text-6xl mb-6 sg-float">🛡️</div>
               <h2
+                className="font-black leading-none tracking-tighter mb-5"
                 style={{
-                  fontSize: "clamp(2.2rem,5.5vw,4rem)",
-                  fontWeight: 900,
-                  lineHeight: 1.08,
-                  letterSpacing: "-0.045em",
-                  margin: "0 0 20px",
+                  fontSize: "clamp(2rem,6vw,4rem)",
                   background:
                     "linear-gradient(135deg,#ffffff 0%,#A78BFA 50%,#60A5FA 100%)",
                   WebkitBackgroundClip: "text",
@@ -2052,95 +1637,48 @@ export default function LandingPage() {
                 your child today
               </h2>
               <p
-                style={{
-                  fontSize: 16,
-                  color: "#6B7280",
-                  maxWidth: 460,
-                  margin: "0 auto 44px",
-                  lineHeight: 1.8,
-                }}
+                className="text-base sm:text-lg leading-relaxed mb-10"
+                style={{ color: "#6B7280" }}
               >
                 Join families across Bangladesh using SafeGuard for real-time
                 child safety — GPS, health, and AI in your pocket.
               </p>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 14,
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                  marginBottom: 32,
-                }}
-              >
-                <Link
-                  href="/auth/register"
-                  className="lp-btn"
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
+                <a
+                  href="#"
+                  className="sg-btn flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl text-base font-extrabold text-white"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "16px 38px",
-                    borderRadius: 14,
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: "white",
-                    textDecoration: "none",
                     background: "linear-gradient(135deg,#6D28D9,#2563EB)",
                     boxShadow: "0 0 50px rgba(109,40,217,0.5)",
                   }}
                 >
                   <Icon d={I.shield} size={18} color="white" /> Get Started Free
-                </Link>
-                <Link
-                  href="/contact"
-                  className="lp-ghost"
+                </a>
+                <a
+                  href="#"
+                  className="sg-ghost flex items-center justify-center gap-2 px-7 py-4 rounded-2xl text-base font-bold"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "16px 30px",
-                    borderRadius: 14,
-                    fontSize: 16,
-                    fontWeight: 700,
                     color: "#9CA3AF",
-                    textDecoration: "none",
                     background: "rgba(255,255,255,0.04)",
                     border: "1px solid rgba(255,255,255,0.1)",
                   }}
                 >
                   Talk to us <Icon d={I.arrowR} size={16} />
-                </Link>
+                </a>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 24,
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                }}
-              >
+              <div className="flex flex-wrap gap-4 sm:gap-6 justify-center">
                 {["No credit card required", "Free setup", "24/7 support"].map(
                   (t) => (
                     <div
                       key={t}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 7,
-                        fontSize: 12,
-                        color: "#6B7280",
-                      }}
+                      className="flex items-center gap-2 text-xs"
+                      style={{ color: "#6B7280" }}
                     >
                       <div
+                        className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
                         style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: "50%",
                           background: "rgba(34,197,94,0.14)",
                           border: "1px solid rgba(34,197,94,0.32)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
                         }}
                       >
                         <Icon d={I.check} size={9} color="#22C55E" />
