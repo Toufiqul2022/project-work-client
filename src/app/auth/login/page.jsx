@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { login } from "@/lib/api"; // ← Real API
 
-// --- Icons (Tailwind Optimized) ---
+// --- Icons ---
 const LockIcon = () => (
   <svg
     width="14"
@@ -47,54 +48,52 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [errors, setErrors] = useState({}); // Added for validation
+  const [errors, setErrors] = useState({});
   const router = useRouter();
 
   const validateForm = () => {
     let newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(email)) {
+    if (!email) newErrors.email = "Email is required";
+    else if (!emailRegex.test(email))
       newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!password) {
-      newErrors.password = "Password is required";
-    } else if (password.length < 6) {
+    if (!password) newErrors.password = "Password is required";
+    else if (password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // ── Real API Login ──────────────────────────────────────
   const handleLogin = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setLoading(true);
-    // Simulation
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await login(email, password);
       router.push("/dashboard");
-    }, 2000);
+    } catch (err) {
+      // Backend error messages
+      const msg =
+        err?.detail ||
+        err?.non_field_errors?.[0] ||
+        "Login failed. Please check your credentials.";
+      setErrors({ api: msg });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <main className="min-h-screen bg-[#0a0a12] flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
-      {/* --- Background Decorative Elements --- */}
+      {/* Background */}
       <div className="fixed inset-0 pointer-events-none opacity-20 bg-[radial-gradient(circle_at_20%_20%,#633cff_0%,transparent_50%),radial-gradient(circle_at_80%_80%,#00c896_0%,transparent_50%)]"></div>
-
-      {/* Floating Shapes */}
       <div className="fixed -top-20 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-purple-600 to-cyan-500 opacity-10 animate-pulse blur-3xl"></div>
       <div className="fixed -bottom-20 -left-20 w-64 h-64 rounded-full bg-gradient-to-br from-pink-600 to-purple-600 opacity-10 animate-bounce blur-3xl"></div>
 
-      {/* --- Main Card Container --- */}
       <div className="relative z-10 w-full max-w-[820px] min-h-[540px] flex flex-col md:flex-row rounded-[24px] border border-white/10 bg-[#0a0a12]/60 backdrop-blur-[24px] shadow-2xl overflow-hidden animate-[lp-card-rise_0.7s_ease-out]">
-        {/* Left Side: Login Form */}
+        {/* Left: Form */}
         <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center">
           <div className="relative mb-8">
             <div className="absolute -top-10 right-0 flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/40 bg-purple-500/10 text-[11px] font-medium text-purple-300">
@@ -109,6 +108,7 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
+            {/* Email */}
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
                 Email Address
@@ -130,6 +130,7 @@ export default function LoginPage() {
               )}
             </div>
 
+            {/* Password */}
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-2">
                 Password
@@ -168,6 +169,7 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -182,6 +184,14 @@ export default function LoginPage() {
                 "CONTINUE →"
               )}
             </button>
+
+            {/* API Error */}
+            {errors.api && (
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                <span className="text-red-400 text-lg">⚠️</span>
+                <p className="text-[11px] text-red-400">{errors.api}</p>
+              </div>
+            )}
           </form>
 
           {/* Social Logins */}
@@ -201,21 +211,18 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Mobile Register Link (Only visible on small screens) */}
           <p className="md:hidden mt-8 text-center text-sm text-white/40">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/auth/register" className="text-purple-400 font-bold">
               Sign Up
             </Link>
           </p>
         </div>
 
-        {/* Right Side: Animated Overlay Panel (Hidden on Mobile) */}
+        {/* Right Panel */}
         <div className="hidden md:flex w-1/2 relative bg-gradient-to-br from-purple-900 via-purple-700 to-indigo-800 p-12 flex-col items-center justify-center text-center overflow-hidden">
-          {/* Decorative Circles inside Overlay */}
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full border border-white/10"></div>
           <div className="absolute bottom-20 left-10 w-20 h-20 rounded-full bg-white/5"></div>
-
           <div className="relative z-10 space-y-4 animate-[lp-card-rise_1s_ease-out]">
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
               New here?

@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { register } from "@/lib/api"; // ← Real API
 
 export default function MultiStepRegister() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({}); // New state for validation
+  const [errors, setErrors] = useState({});
   const router = useRouter();
 
-  // Unified State to collate all information
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -19,21 +19,15 @@ export default function MultiStepRegister() {
     contacts: ["", "", "", "", ""],
   });
 
-  // Validation Logic
   const validateStep1 = () => {
     let tempErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     if (!formData.name.trim()) tempErrors.name = "Full name is required";
-    if (!formData.email) {
-      tempErrors.email = "Email is required";
-    } else if (!emailRegex.test(formData.email)) {
+    if (!formData.email) tempErrors.email = "Email is required";
+    else if (!emailRegex.test(formData.email))
       tempErrors.email = "Invalid email format";
-    }
-    if (formData.password.length < 6) {
+    if (formData.password.length < 6)
       tempErrors.password = "Password must be at least 6 characters";
-    }
-
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -42,12 +36,8 @@ export default function MultiStepRegister() {
     let tempErrors = {};
     if (!formData.childName.trim())
       tempErrors.childName = "Child's name is required";
-
-    // Check if at least the first contact is provided and is a valid format (simple length check)
-    if (!formData.contacts[0] || formData.contacts[0].length < 7) {
+    if (!formData.contacts[0] || formData.contacts[0].length < 7)
       tempErrors.contacts = "At least one valid primary contact is required";
-    }
-
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -61,31 +51,43 @@ export default function MultiStepRegister() {
 
   const handleNextStep = (e) => {
     e.preventDefault();
-    if (validateStep1()) {
-      setStep(2);
-    }
+    if (validateStep1()) setStep(2);
   };
 
+  // ── Real API Register ───────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateStep2()) {
-      setLoading(true);
-      // Simulating final registration completion
-      setTimeout(() => {
-        setLoading(false);
-        router.push("/dashboard");
-      }, 2000);
+    if (!validateStep2()) return;
+
+    setLoading(true);
+    try {
+      await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+      // Success → go to login with a success message
+      router.push("/auth/login?registered=1");
+    } catch (err) {
+      const msg =
+        err?.email?.[0] ||
+        err?.password?.[0] ||
+        err?.name?.[0] ||
+        err?.detail ||
+        "Registration failed. Please try again.";
+      setErrors({ api: msg });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <main className="min-h-screen bg-[#0a0a12] flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
-      {/* Background Decor */}
+      {/* Background */}
       <div className="fixed inset-0 pointer-events-none opacity-20 bg-[radial-gradient(circle_at_20%_20%,#633cff_0%,transparent_50%),radial-gradient(circle_at_80%_80%,#00c896_0%,transparent_50%)]"></div>
 
-      {/* Main Container */}
       <div className="relative z-10 w-full max-w-[900px] min-h-[600px] flex flex-col md:flex-row rounded-[24px] md:rounded-[32px] border border-white/10 bg-[#0a0a12]/60 backdrop-blur-[32px] shadow-2xl overflow-hidden animate-[lp-card-rise_0.7s_ease-out]">
-        {/* LEFT SIDE: Premium Info Panel (Hidden on mobile) */}
+        {/* Left Panel */}
         <div className="hidden md:flex md:w-[40%] relative bg-gradient-to-br from-[#4a1fa8] via-[#7c4dff] to-[#536dfe] p-12 flex-col justify-center items-center text-center overflow-hidden">
           <div className="relative z-10 space-y-6">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/60">
@@ -111,9 +113,9 @@ export default function MultiStepRegister() {
           <div className="absolute bottom-10 left-10 w-24 h-24 rounded-full bg-white/5"></div>
         </div>
 
-        {/* RIGHT SIDE: Multi-step Form */}
+        {/* Right: Form */}
         <div className="w-full md:w-[60%] p-6 md:p-10 flex flex-col justify-center bg-black/10">
-          {/* Progress Indicator */}
+          {/* Progress Bar */}
           <div className="flex gap-3 mb-8 md:mb-10">
             <div
               className={`h-1 flex-1 rounded-full transition-all duration-500 ${step === 1 ? "bg-purple-500 shadow-[0_0_10px_rgba(124,77,255,0.5)]" : "bg-purple-500/20"}`}
@@ -139,7 +141,8 @@ export default function MultiStepRegister() {
               </header>
 
               <div className="space-y-4">
-                <div className="group">
+                {/* Name */}
+                <div>
                   <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
                     Full Name
                   </label>
@@ -159,7 +162,9 @@ export default function MultiStepRegister() {
                     </p>
                   )}
                 </div>
-                <div className="group">
+
+                {/* Email */}
+                <div>
                   <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
                     Guardian Email
                   </label>
@@ -179,7 +184,9 @@ export default function MultiStepRegister() {
                     </p>
                   )}
                 </div>
-                <div className="group">
+
+                {/* Password */}
+                <div>
                   <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
                     Password
                   </label>
@@ -232,9 +239,10 @@ export default function MultiStepRegister() {
               </header>
 
               <div className="space-y-4">
-                <div className="group">
+                {/* Child Name */}
+                <div>
                   <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
-                    Child's Name
+                    Child&apos;s Name
                   </label>
                   <input
                     type="text"
@@ -254,8 +262,9 @@ export default function MultiStepRegister() {
                   )}
                 </div>
 
-                <div className="space-y-3">
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                {/* Emergency Contacts */}
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
                     Emergency Contacts (Up to 5)
                   </label>
                   <div className="max-h-[160px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
@@ -289,18 +298,26 @@ export default function MultiStepRegister() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full sm:flex-[2] h-14 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-purple-500/20 transition-all active:scale-95 text-xs tracking-widest uppercase"
+                  className="w-full sm:flex-[2] h-14 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-purple-500/20 transition-all active:scale-95 text-xs tracking-widest uppercase disabled:opacity-50"
                 >
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      INITIALIZING...
+                      CREATING ACCOUNT...
                     </div>
                   ) : (
                     "Complete Register"
                   )}
                 </button>
               </div>
+
+              {/* API Error */}
+              {errors.api && (
+                <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                  <span className="text-red-400 text-lg">⚠️</span>
+                  <p className="text-[11px] text-red-400">{errors.api}</p>
+                </div>
+              )}
             </form>
           )}
         </div>

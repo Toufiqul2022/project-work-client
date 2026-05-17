@@ -1,64 +1,19 @@
 "use client";
 import React, { useState, useEffect } from "react";
-
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
-const MOCK = {
-  user: { name: "Rahim Uddin", id: "BD-2024-001" },
-  device: { battery: 78, signal: 4, status: "SAFE", lastSeen: "2 min ago" },
-  location: {
-    lat: 23.8103,
-    lng: 90.4125,
-    address: "Mirpur 10, Dhaka",
-    speed: 0,
-  },
-  heartRate: {
-    bpm: 72,
-    stress: "Low",
-    trend: [68, 70, 72, 69, 74, 72, 71, 73, 72, 70, 72, 74],
-  },
-  alerts: [
-    {
-      id: 1,
-      type: "SOS",
-      time: "11:42 AM",
-      location: "Mirpur 10",
-      status: "Resolved",
-      color: "#EF4444",
-    },
-    {
-      id: 2,
-      type: "Geofence",
-      time: "09:15 AM",
-      location: "Dhanmondi",
-      status: "Active",
-      color: "#F59E0B",
-    },
-    {
-      id: 3,
-      type: "Anomaly",
-      time: "Yesterday",
-      location: "Gulshan 1",
-      status: "Resolved",
-      color: "#8B5CF6",
-    },
-  ],
-  contacts: [
-    { name: "Karim (Father)", phone: "01711-XXXXXX", priority: 1 },
-    { name: "Fatema (Mother)", phone: "01821-XXXXXX", priority: 2 },
-    { name: "Uncle Jamal", phone: "01911-XXXXXX", priority: 3 },
-    { name: "Emergency: 999", phone: "999", priority: 4 },
-  ],
-  safeZones: [
-    { name: "Home", radius: "200m", status: "Active" },
-    { name: "School", radius: "500m", status: "Active" },
-    { name: "Grandma's House", radius: "150m", status: "Inactive" },
-  ],
-  routes: [
-    { time: "08:30", loc: "Home → School", dist: "2.3 km" },
-    { time: "02:00", loc: "School → Market", dist: "0.8 km" },
-    { time: "03:45", loc: "Market → Home", dist: "2.1 km" },
-  ],
-};
+import { useRouter } from "next/navigation";
+import {
+  getMe,
+  getDevices,
+  getAlerts,
+  getLocations,
+  getGeofences,
+  resolveAlert,
+  createGeofence,
+  deleteGeofence,
+  logout,
+  isLoggedIn,
+  connectDeviceSocket,
+} from "@/lib/api";
 
 // ─── SVG ICON COMPONENT ───────────────────────────────────────────────────────
 const Icon = ({
@@ -100,13 +55,14 @@ const Icons = {
   chevron: "M9 18l6-6-6-6",
   menu: "M3 12h18 M3 6h18 M3 18h18",
   close: "M18 6L6 18 M6 6l12 12",
+  logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4 M16 17l5-5-5-5 M21 12H9",
 };
 
-// ─── REUSABLE UI COMPONENTS ───────────────────────────────────────────────────
-
-const Card = ({ children, className = "", title }) => (
+// ─── REUSABLE UI ──────────────────────────────────────────────────────────────
+const Card = ({ children, className = "", title, style }) => (
   <div
     className={`bg-[#0D1117] border border-white/5 rounded-2xl p-4 md:p-5 mb-4 ${className}`}
+    style={style}
   >
     {title && (
       <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
@@ -120,20 +76,17 @@ const Card = ({ children, className = "", title }) => (
 const Badge = ({ children, color }) => (
   <span
     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-bold border whitespace-nowrap"
-    style={{
-      backgroundColor: `${color}15`,
-      borderColor: `${color}30`,
-      color: color,
-    }}
+    style={{ backgroundColor: `${color}15`, borderColor: `${color}30`, color }}
   >
     {children}
   </span>
 );
 
-const ActionBtn = ({ children, color, className = "", onClick }) => (
+const ActionBtn = ({ children, color, className = "", onClick, disabled }) => (
   <button
     onClick={onClick}
-    className={`px-3 py-2 md:px-4 md:py-2 rounded-xl text-white font-bold text-[10px] md:text-xs transition-colors hover:brightness-110 flex-shrink-0 ${className}`}
+    disabled={disabled}
+    className={`px-3 py-2 md:px-4 md:py-2 rounded-xl text-white font-bold text-[10px] md:text-xs transition-colors hover:brightness-110 flex-shrink-0 disabled:opacity-40 ${className}`}
     style={{ backgroundColor: color }}
   >
     {children}
@@ -156,8 +109,13 @@ const ListItem = ({ label, value, badge, border = true }) => (
   </div>
 );
 
-// ─── DATA VISUALIZATIONS ──────────────────────────────────────────────────────
+const Loader = () => (
+  <div className="flex items-center justify-center py-10">
+    <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+  </div>
+);
 
+// ─── DATA VISUALIZATIONS ──────────────────────────────────────────────────────
 function Sparkline({ data, color = "#22C55E", h = 40 }) {
   const max = Math.max(...data),
     min = Math.min(...data);
@@ -175,18 +133,6 @@ function Sparkline({ data, color = "#22C55E", h = 40 }) {
       style={{ height: h }}
       preserveAspectRatio="none"
     >
-      <defs>
-        <linearGradient
-          id={`sg-${color.replace("#", "")}`}
-          x1="0"
-          y1="0"
-          x2="0"
-          y2="1"
-        >
-          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
       <polyline
         points={pts}
         fill="none"
@@ -256,7 +202,10 @@ function RingGauge({
   );
 }
 
-function FakeMap({ className = "h-40 md:h-[220px]" }) {
+function LiveMap({ lat, lon, address, className = "h-40 md:h-[220px]" }) {
+  const displayLat = lat || 23.8103;
+  const displayLon = lon || 90.4125;
+  const displayAddr = address || "Location updating...";
   return (
     <div
       className={`relative w-full rounded-xl overflow-hidden bg-[#060D1A] ${className}`}
@@ -284,7 +233,6 @@ function FakeMap({ className = "h-40 md:h-[220px]" }) {
             strokeWidth="0.5"
           />
         ))}
-        {/* Roads */}
         <path
           d="M0,55% Q40%,50% 100%,52%"
           stroke="#1E4D8C"
@@ -299,7 +247,6 @@ function FakeMap({ className = "h-40 md:h-[220px]" }) {
           fill="none"
           opacity="0.6"
         />
-        {/* Safe zone ring */}
         <circle
           cx="50%"
           cy="50%"
@@ -311,28 +258,31 @@ function FakeMap({ className = "h-40 md:h-[220px]" }) {
           strokeDasharray="5 4"
         />
         <circle cx="50%" cy="50%" r="60" fill="#22C55E" opacity="0.04" />
-        {/* Pulse */}
         <circle cx="50%" cy="50%" r="18" fill="#22C55E" opacity="0.12" />
         <circle cx="50%" cy="50%" r="9" fill="#22C55E" opacity="0.25" />
         <circle cx="50%" cy="50%" r="5" fill="#22C55E" opacity="0.9" />
         <circle cx="50%" cy="50%" r="3" fill="white" opacity="0.95" />
-        <text x="54%" y="44%" fill="#22C55E" fontSize="10" fontWeight="600">
-          Mirpur 10
-        </text>
       </svg>
       <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-black/50 backdrop-blur-md border border-green-500/30 rounded-lg px-2.5 py-1 text-[9px] md:text-[10px] text-green-500 font-bold">
         🟢 LIVE
       </div>
       <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-black/50 backdrop-blur-md border border-white/10 rounded-lg px-2.5 py-1 text-[9px] md:text-[10px] text-slate-400">
-        23.8103°N · 90.4125°E
+        {displayLat}°N · {displayLon}°E
       </div>
     </div>
   );
 }
 
-// ─── PAGES ────────────────────────────────────────────────────────────────────
+// ─── PAGE COMPONENTS ──────────────────────────────────────────────────────────
 
-function OverviewPage({ bpm, sosActive, setSosActive }) {
+function OverviewPage({ bpm, sosActive, setSosActive, apiData }) {
+  const device = apiData.devices[0];
+  const battery = device?.battery_pct ?? "—";
+  const status = device ? (device.is_active ? "SAFE" : "OFFLINE") : "—";
+  const lastLoc = apiData.locations[0];
+  const unresolvedCount = apiData.alerts.filter((a) => !a.resolved).length;
+  const bpmTrend = [68, 70, 72, 69, 74, 72, 71, 73, 72, 70, 72, 74];
+
   return (
     <div className="animate-in fade-in duration-300">
       <div className="mb-6 md:mb-8">
@@ -344,20 +294,25 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
         </p>
       </div>
 
-      {/* Status Row */}
+      {/* Status Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4">
         {[
           {
             label: "Device Status",
-            value: "SAFE",
-            sub: "All systems normal",
-            color: "#22C55E",
-            icon: "🟢",
+            value: status,
+            sub: device
+              ? `Last seen: ${device.last_seen ? new Date(device.last_seen).toLocaleTimeString() : "—"}`
+              : "No device registered",
+            color: status === "SAFE" ? "#22C55E" : "#EF4444",
+            icon: status === "SAFE" ? "🟢" : "🔴",
           },
           {
             label: "Battery",
-            value: `${MOCK.device.battery}%`,
-            sub: "Est. 18h remaining",
+            value: battery !== "—" ? `${battery}%` : "—",
+            sub:
+              battery !== "—"
+                ? `Est. ${Math.round(battery * 0.23)}h remaining`
+                : "Connect device",
             color: "#60A5FA",
             icon: "🔋",
           },
@@ -371,13 +326,12 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
         ].map((s) => (
           <div
             key={s.label}
-            className="bg-[#0D1117] rounded-2xl p-4 md:p-5 border-t-2"
+            className="bg-[#0D1117] rounded-2xl p-4 md:p-5"
             style={{
-              borderColor: s.color,
-              borderLeftColor: `${s.color}18`,
-              borderRightColor: `${s.color}18`,
-              borderBottomColor: `${s.color}18`,
-              borderWidth: "2px 1px 1px 1px",
+              borderTop: `2px solid ${s.color}`,
+              border: `1px solid ${s.color}18`,
+              borderTopWidth: "2px",
+              borderTopColor: s.color,
             }}
           >
             <div className="text-lg md:text-xl mb-1.5">{s.icon}</div>
@@ -400,12 +354,17 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
       {/* Map + Heart Rate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <Card title="📍 Live Location">
-          <FakeMap className="h-40 md:h-[165px]" />
+          <LiveMap
+            lat={lastLoc?.latitude}
+            lon={lastLoc?.longitude}
+            className="h-40 md:h-[165px]"
+          />
           <div className="mt-2 text-[11px] text-gray-400">
-            📌 {MOCK.location.address}
+            {lastLoc
+              ? `📌 ${lastLoc.latitude}°N, ${lastLoc.longitude}°E`
+              : "📌 Waiting for GPS data..."}
           </div>
         </Card>
-
         <Card title="💓 Heart Rate">
           <div className="flex items-center gap-4 mb-3 md:mb-4">
             <div className="text-4xl md:text-5xl font-black text-red-500 leading-none">
@@ -419,7 +378,7 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
             </div>
           </div>
           <Sparkline
-            data={[...MOCK.heartRate.trend.slice(-6), bpm]}
+            data={[...bpmTrend.slice(-6), bpm]}
             color="#EF4444"
             h={55}
           />
@@ -434,9 +393,7 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
         <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-6 py-2">
           <div className="w-full sm:w-auto flex flex-col items-center justify-center shrink-0">
             <button
-              className={`w-20 h-20 md:w-24 md:h-24 rounded-full font-black text-xs md:text-sm tracking-widest text-white transition-all duration-300 flex items-center justify-center
-                ${sosActive ? "bg-red-500/20 border-4 border-red-500 shadow-[0_0_32px_rgba(239,68,68,0.6)]" : "bg-red-500 border-4 border-red-500/60 hover:brightness-110"}
-              `}
+              className={`w-20 h-20 md:w-24 md:h-24 rounded-full font-black text-xs md:text-sm tracking-widest text-white transition-all duration-300 flex items-center justify-center ${sosActive ? "bg-red-500/20 border-4 border-red-500 shadow-[0_0_32px_rgba(239,68,68,0.6)]" : "bg-red-500 border-4 border-red-500/60 hover:brightness-110"}`}
               onClick={() => setSosActive((s) => !s)}
             >
               {sosActive ? "ACTIVE" : "SOS"}
@@ -445,13 +402,28 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
               Emergency Alert
             </div>
           </div>
-
           <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
             {[
-              { label: "Total Alerts", value: "3", color: "text-red-500" },
-              { label: "Safe Zones", value: "2", color: "text-green-500" },
-              { label: "Contacts", value: "4", color: "text-blue-400" },
-              { label: "Uptime", value: "99%", color: "text-purple-400" },
+              {
+                label: "Total Alerts",
+                value: apiData.alerts.length.toString(),
+                color: "text-red-500",
+              },
+              {
+                label: "Safe Zones",
+                value: apiData.geofences.length.toString(),
+                color: "text-green-500",
+              },
+              {
+                label: "Unresolved",
+                value: unresolvedCount.toString(),
+                color: "text-yellow-400",
+              },
+              {
+                label: "Devices",
+                value: apiData.devices.length.toString(),
+                color: "text-purple-400",
+              },
             ].map((s) => (
               <div
                 key={s.label}
@@ -473,12 +445,12 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
       <Card title="🛠️ Technology Stack">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
           {[
-            { cat: "Frontend", val: "React + Tailwind CSS" },
+            { cat: "Frontend", val: "Next.js + Tailwind CSS" },
             { cat: "Backend", val: "Django REST Framework + PostgreSQL" },
             { cat: "Hardware", val: "ESP32 + NEO-6M GPS + SIM800L GSM" },
             { cat: "Algorithm", val: "Haversine + Motion Anomaly Detection" },
-            { cat: "AI/ML", val: "TensorFlow.js — Danger Prediction" },
-            { cat: "Hosting", val: "Vercel + Railway" },
+            { cat: "Auth", val: "JWT Token (djoser)" },
+            { cat: "Hosting", val: "Vercel (frontend) + Render (backend)" },
           ].map((t) => (
             <div
               key={t.cat}
@@ -498,20 +470,43 @@ function OverviewPage({ bpm, sosActive, setSosActive }) {
   );
 }
 
-function TrackingPage() {
+function TrackingPage({ apiData }) {
+  const lastLoc = apiData?.locations?.[0];
+  const lat = lastLoc?.latitude || "—";
+  const lon = lastLoc?.longitude || "—";
+  const ts = lastLoc?.timestamp
+    ? new Date(lastLoc.timestamp).toLocaleTimeString()
+    : "—";
+
   return (
     <div className="animate-in fade-in duration-300">
       <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 mb-4 md:mb-5">
         🗺️ Live GPS Tracking
       </h2>
       <Card>
-        <FakeMap className="h-64 md:h-[350px]" />
+        <LiveMap
+          lat={lat !== "—" ? lat : null}
+          lon={lon !== "—" ? lon : null}
+          className="h-64 md:h-[350px]"
+        />
       </Card>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4">
         {[
-          { label: "Latitude", value: "23.8103°N", color: "#60A5FA" },
-          { label: "Longitude", value: "90.4125°E", color: "#60A5FA" },
-          { label: "Speed", value: "0 km/h", color: "#22C55E" },
+          {
+            label: "Latitude",
+            value: lat !== "—" ? `${lat}°N` : "—",
+            color: "#60A5FA",
+          },
+          {
+            label: "Longitude",
+            value: lon !== "—" ? `${lon}°E` : "—",
+            color: "#60A5FA",
+          },
+          {
+            label: "Speed",
+            value: lastLoc?.speed != null ? `${lastLoc.speed} km/h` : "0 km/h",
+            color: "#22C55E",
+          },
         ].map((s) => (
           <div
             key={s.label}
@@ -531,12 +526,15 @@ function TrackingPage() {
         ))}
       </div>
       <Card title="📍 Location Details">
-        <ListItem label="Address" value="Mirpur 10, Dhaka" />
-        <ListItem label="Last Updated" value="2 minutes ago" />
+        <ListItem label="Last Updated" value={ts} />
+        <ListItem
+          label="Total Points"
+          value={apiData?.locations?.length?.toString() || "0"}
+        />
         <ListItem label="Update Rate" value="Every 30 seconds" />
         <ListItem
           label="Safe Zone"
-          badge={{ label: "✓ Inside Home Zone", color: "#22C55E" }}
+          badge={{ label: "✓ Monitoring Active", color: "#22C55E" }}
           border={false}
         />
       </Card>
@@ -545,6 +543,7 @@ function TrackingPage() {
 }
 
 function HealthPage({ bpm }) {
+  const bpmTrend = [68, 70, 72, 69, 74, 72, 71, 73, 72, 70, 72, 74];
   return (
     <div className="animate-in fade-in duration-300">
       <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 mb-4 md:mb-5">
@@ -567,16 +566,16 @@ function HealthPage({ bpm }) {
             sublabel="Stress Level"
           />
           <RingGauge
-            value={MOCK.device.battery}
+            value={78}
             color="#60A5FA"
-            label={`${MOCK.device.battery}%`}
+            label="78%"
             sublabel="Battery"
           />
         </div>
       </Card>
       <Card title="❤️ Heart Rate — Live Graph">
         <Sparkline
-          data={[...MOCK.heartRate.trend.slice(-10), bpm]}
+          data={[...bpmTrend.slice(-10), bpm]}
           color="#EF4444"
           h={80}
         />
@@ -619,13 +618,34 @@ function HealthPage({ bpm }) {
   );
 }
 
-function AlertsPage() {
+function AlertsPage({ apiData, setApiData }) {
   const [filter, setFilter] = useState("All");
-  const filters = ["All", "SOS", "Geofence", "Anomaly"];
+  const [resolving, setResolving] = useState(null);
+  const filters = ["All", "PANIC", "GEOFENCE", "ANOMALY"];
+
+  const allAlerts = apiData?.alerts || [];
   const filtered =
     filter === "All"
-      ? MOCK.alerts
-      : MOCK.alerts.filter((a) => a.type === filter);
+      ? allAlerts
+      : allAlerts.filter((a) => a.alert_type === filter);
+
+  const alertColor = (type) =>
+    ({ PANIC: "#EF4444", GEOFENCE: "#F59E0B", ANOMALY: "#8B5CF6" })[type] ||
+    "#60A5FA";
+
+  const handleResolve = async (id) => {
+    setResolving(id);
+    try {
+      await resolveAlert(id);
+      setApiData((prev) => ({
+        ...prev,
+        alerts: prev.alerts.map((a) =>
+          a.id === id ? { ...a, resolved: true } : a,
+        ),
+      }));
+    } catch {}
+    setResolving(null);
+  };
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -638,8 +658,7 @@ function AlertsPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border
-                ${filter === f ? "bg-purple-700 border-purple-600 text-white" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"}`}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filter === f ? "bg-purple-700 border-purple-600 text-white" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"}`}
             >
               {f}
             </button>
@@ -647,283 +666,368 @@ function AlertsPage() {
         </div>
       </div>
 
-      {filtered.map((a) => (
-        <Card
-          key={a.id}
-          className="border-l-4"
-          style={{ borderLeftColor: a.color }}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Badge color={a.color}>{a.type}</Badge>
-                <span className="text-[9px] md:text-[10px] text-gray-500">
-                  {a.time}
-                </span>
-              </div>
-              <div className="text-[11px] md:text-xs text-slate-300 font-medium">
-                📍 {a.location}
-              </div>
-            </div>
-            <Badge color={a.status === "Resolved" ? "#22C55E" : "#F59E0B"}>
-              {a.status === "Resolved" ? "✓" : "●"} {a.status}
-            </Badge>
-          </div>
+      {filtered.length === 0 ? (
+        <Card>
+          <p className="text-center text-gray-500 text-sm py-6">
+            No alerts found.
+          </p>
         </Card>
-      ))}
-
-      <Card title="⚡ Send Test Alert">
-        <div className="flex flex-wrap gap-2">
-          <ActionBtn color="#EF4444">🆘 Test SOS</ActionBtn>
-          <ActionBtn color="#F59E0B">📍 Test Geofence</ActionBtn>
-          <ActionBtn color="#8B5CF6">⚠️ Test Anomaly</ActionBtn>
-        </div>
-      </Card>
+      ) : (
+        filtered.map((a) => {
+          const color = alertColor(a.alert_type);
+          const ts = a.timestamp ? new Date(a.timestamp).toLocaleString() : "—";
+          return (
+            <Card
+              key={a.id}
+              className="border-l-4"
+              style={{ borderLeftColor: color }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Badge color={color}>{a.alert_type || "ALERT"}</Badge>
+                    <span className="text-[9px] md:text-[10px] text-gray-500">
+                      {ts}
+                    </span>
+                  </div>
+                  <div className="text-[11px] md:text-xs text-slate-300 font-medium">
+                    📍{" "}
+                    {a.latitude
+                      ? `${a.latitude}°N, ${a.longitude}°E`
+                      : "Location N/A"}
+                  </div>
+                  {a.device_name && (
+                    <div className="text-[10px] text-gray-500 mt-0.5">
+                      Device: {a.device_name}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge color={a.resolved ? "#22C55E" : "#F59E0B"}>
+                    {a.resolved ? "✓ Resolved" : "● Active"}
+                  </Badge>
+                  {!a.resolved && (
+                    <button
+                      onClick={() => handleResolve(a.id)}
+                      disabled={resolving === a.id}
+                      className="px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/25 text-green-500 text-[10px] font-bold hover:bg-green-500/20 transition-colors disabled:opacity-40"
+                    >
+                      {resolving === a.id ? "..." : "Resolve"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </Card>
+          );
+        })
+      )}
     </div>
   );
 }
 
-function HistoryPage() {
+function HistoryPage({ apiData }) {
+  const locations = apiData?.locations || [];
   return (
     <div className="animate-in fade-in duration-300">
       <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 mb-4 md:mb-5">
         🛣️ Route History
       </h2>
       <Card title={`📅 Today — ${new Date().toLocaleDateString("en-BD")}`}>
-        <FakeMap className="h-48 md:h-[250px]" />
+        <LiveMap className="h-48 md:h-[250px]" />
       </Card>
-      <Card title="🕐 Timeline">
-        <div className="py-2">
-          {MOCK.routes.map((r, i) => (
-            <div key={i} className="flex gap-4 relative pb-6 last:pb-0">
-              {/* Timeline line connecting items */}
-              {i < MOCK.routes.length - 1 && (
-                <div className="absolute top-6 left-[30px] bottom-[-6px] w-[2px] bg-gradient-to-b from-purple-600/50 to-blue-600/50 rounded-full" />
-              )}
-              <div className="text-[10px] text-gray-500 min-w-[44px] font-mono pt-0.5">
-                {r.time}
-              </div>
-              <div className="w-[10px] h-[10px] rounded-full bg-purple-500 shrink-0 mt-1 border-2 border-[#0D1117] z-10" />
-              <div className="-mt-1">
-                <div className="text-xs md:text-sm font-semibold text-slate-200">
-                  {r.loc}
+      <Card title="🕐 Location Timeline">
+        <div className="py-2 max-h-96 overflow-y-auto">
+          {locations.length === 0 ? (
+            <p className="text-center text-gray-500 text-sm py-4">
+              No location history yet.
+            </p>
+          ) : (
+            locations.slice(0, 20).map((loc, i) => (
+              <div key={i} className="flex gap-4 relative pb-5 last:pb-0">
+                {i < locations.length - 1 && (
+                  <div className="absolute top-5 left-[54px] bottom-[-6px] w-[2px] bg-gradient-to-b from-purple-600/50 to-blue-600/50 rounded-full" />
+                )}
+                <div className="text-[10px] text-gray-500 min-w-[56px] font-mono pt-0.5">
+                  {new Date(loc.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
-                <div className="text-[10px] text-gray-500 mt-1">
-                  Distance: {r.dist}
+                <div className="w-[10px] h-[10px] rounded-full bg-purple-500 shrink-0 mt-1 border-2 border-[#0D1117] z-10" />
+                <div className="-mt-1">
+                  <div className="text-xs md:text-sm font-semibold text-slate-200">
+                    {loc.latitude}°N, {loc.longitude}°E
+                  </div>
+                  {loc.speed != null && (
+                    <div className="text-[10px] text-gray-500 mt-1">
+                      Speed: {loc.speed} km/h
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </Card>
     </div>
   );
 }
 
-function ZonesPage() {
+function ZonesPage({ apiData, setApiData }) {
+  const geofences = apiData?.geofences || [];
+  const [deleting, setDeleting] = useState(null);
+
+  const handleDelete = async (id) => {
+    setDeleting(id);
+    try {
+      await deleteGeofence(id);
+      setApiData((prev) => ({
+        ...prev,
+        geofences: prev.geofences.filter((g) => g.id !== id),
+      }));
+    } catch {}
+    setDeleting(null);
+  };
+
   return (
     <div className="animate-in fade-in duration-300">
       <div className="flex items-center justify-between mb-4 md:mb-5">
         <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 m-0">
           📍 Safe Zone Management
         </h2>
-        <ActionBtn color="#6D28D9">+ Add Zone</ActionBtn>
       </div>
 
-      {MOCK.safeZones.map((z, i) => (
-        <Card key={i} className="!mb-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-xs md:text-sm font-bold text-slate-200">
-                {z.name}
-              </div>
-              <div className="text-[10px] text-gray-500 mt-1">
-                Radius: {z.radius}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3">
-              <Badge color={z.status === "Active" ? "#22C55E" : "#6B7280"}>
-                {z.status}
-              </Badge>
-              <button className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-[10px] hover:bg-white/10 transition-colors">
-                Edit
-              </button>
-            </div>
-          </div>
+      {geofences.length === 0 ? (
+        <Card>
+          <p className="text-center text-gray-500 text-sm py-6">
+            No geofences configured. Add one via your device settings.
+          </p>
         </Card>
-      ))}
+      ) : (
+        geofences.map((z) => (
+          <Card key={z.id} className="!mb-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs md:text-sm font-bold text-slate-200">
+                  {z.name}
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">
+                  Radius: {z.radius_m}m · Device: {z.device_name || z.device}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 md:gap-3">
+                <Badge color={z.is_active ? "#22C55E" : "#6B7280"}>
+                  {z.is_active ? "Active" : "Inactive"}
+                </Badge>
+                <button
+                  onClick={() => handleDelete(z.id)}
+                  disabled={deleting === z.id}
+                  className="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400 text-[10px] hover:bg-red-500/20 transition-colors disabled:opacity-40"
+                >
+                  {deleting === z.id ? "..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </Card>
+        ))
+      )}
+
       <Card title="🗺️ Zone Preview" className="mt-5">
-        <FakeMap className="h-48 md:h-[200px]" />
+        <LiveMap className="h-48 md:h-[200px]" />
       </Card>
     </div>
   );
 }
 
-function ContactsPage() {
+function ContactsPage({ apiData }) {
+  // Contacts come from user profile — show device owner info + placeholder
+  const user = apiData?.user;
   return (
     <div className="animate-in fade-in duration-300">
       <div className="flex items-center justify-between mb-4 md:mb-5">
         <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 m-0">
           📞 Emergency Contacts
         </h2>
-        <ActionBtn color="#6D28D9">+ Add Contact</ActionBtn>
       </div>
-
-      {MOCK.contacts.map((c, i) => (
-        <Card key={i} className="!mb-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-600/10 border border-purple-600/30 flex items-center justify-center text-lg shrink-0">
-                {i === 3 ? "🚨" : "👤"}
+      {user && (
+        <Card className="!mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-purple-600/10 border border-purple-600/30 flex items-center justify-center text-lg shrink-0">
+              👤
+            </div>
+            <div>
+              <div className="text-xs md:text-sm font-bold text-slate-200">
+                {user.name || user.email}
               </div>
-              <div>
-                <div className="text-xs md:text-sm font-bold text-slate-200">
-                  {c.name}
-                </div>
-                <div className="text-[10px] md:text-[11px] text-gray-500 mt-0.5">
-                  {c.phone}
-                </div>
+              <div className="text-[10px] md:text-[11px] text-gray-500 mt-0.5">
+                {user.email}
               </div>
             </div>
-            <div className="flex items-center gap-3 pl-13 sm:pl-0">
-              <Badge color="#A78BFA">#{c.priority}</Badge>
-              <button className="px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/25 text-green-500 text-[10px] font-bold hover:bg-green-500/20 transition-colors">
-                Test
-              </button>
-            </div>
+            <Badge color="#A78BFA">#1 — Account Owner</Badge>
           </div>
         </Card>
-      ))}
+      )}
+      <Card>
+        <p className="text-center text-gray-500 text-sm py-4">
+          Emergency contacts are managed via your account profile.
+          <br />
+          <span className="text-purple-400 text-xs">
+            Go to Settings → Profile to update.
+          </span>
+        </p>
+      </Card>
     </div>
   );
 }
 
-function ReportsPage() {
-  const reports = [
-    {
-      title: "Incident Report — Alert #001",
-      date: "Today 11:42 AM",
-      type: "SOS",
-      size: "124 KB",
-      color: "#EF4444",
-    },
-    {
-      title: "Geofence Breach Report",
-      date: "Today 09:15 AM",
-      type: "Geofence",
-      size: "89 KB",
-      color: "#F59E0B",
-    },
-    {
-      title: "Monthly Summary — May 2026",
-      date: "01 May 2026",
-      type: "Summary",
-      size: "342 KB",
-      color: "#60A5FA",
-    },
-  ];
+function ReportsPage({ apiData }) {
+  const alerts = apiData?.alerts || [];
+  const resolved = alerts.filter((a) => a.resolved);
+  const active = alerts.filter((a) => !a.resolved);
+  const alertColor = (type) =>
+    ({ PANIC: "#EF4444", GEOFENCE: "#F59E0B", ANOMALY: "#8B5CF6" })[type] ||
+    "#60A5FA";
+
   return (
     <div className="animate-in fade-in duration-300">
       <div className="flex items-center justify-between mb-4 md:mb-5">
         <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 m-0">
           📄 Evidence & Reports
         </h2>
-        <ActionBtn color="#6D28D9">⬇ Export PDF</ActionBtn>
       </div>
 
-      {reports.map((r, i) => (
-        <Card
-          key={i}
-          className="border-l-4 !mb-3"
-          style={{ borderLeftColor: r.color }}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div className="text-xs md:text-sm font-bold text-slate-200">
-                {r.title}
-              </div>
-              <div className="text-[9px] md:text-[10px] text-gray-500 mt-1">
-                {r.date} · {r.size}
-              </div>
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[
+          { label: "Total Alerts", value: alerts.length, color: "#60A5FA" },
+          { label: "Resolved", value: resolved.length, color: "#22C55E" },
+          { label: "Active", value: active.length, color: "#F59E0B" },
+        ].map((s) => (
+          <div
+            key={s.label}
+            className="bg-[#0D1117] rounded-xl p-3 text-center border"
+            style={{ borderColor: `${s.color}18` }}
+          >
+            <div className="text-2xl font-black" style={{ color: s.color }}>
+              {s.value}
             </div>
-            <div className="flex items-center gap-3">
-              <Badge color={r.color}>{r.type}</Badge>
-              <button className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-[10px] hover:bg-white/10 transition-colors">
-                View
-              </button>
-            </div>
+            <div className="text-[9px] text-gray-500 mt-1">{s.label}</div>
           </div>
+        ))}
+      </div>
+
+      {alerts.length === 0 ? (
+        <Card>
+          <p className="text-center text-gray-500 text-sm py-6">
+            No alert records yet.
+          </p>
         </Card>
-      ))}
+      ) : (
+        alerts.slice(0, 10).map((a, i) => {
+          const color = alertColor(a.alert_type);
+          return (
+            <Card
+              key={a.id}
+              className="border-l-4 !mb-3"
+              style={{ borderLeftColor: color }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs md:text-sm font-bold text-slate-200">
+                    Alert #{i + 1} — {a.alert_type || "ALERT"}
+                  </div>
+                  <div className="text-[9px] md:text-[10px] text-gray-500 mt-1">
+                    {a.timestamp ? new Date(a.timestamp).toLocaleString() : "—"}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge color={color}>{a.alert_type}</Badge>
+                  <Badge color={a.resolved ? "#22C55E" : "#F59E0B"}>
+                    {a.resolved ? "Resolved" : "Active"}
+                  </Badge>
+                </div>
+              </div>
+            </Card>
+          );
+        })
+      )}
     </div>
   );
 }
 
-function SettingsPage() {
-  const sections = [
-    {
-      section: "Device Configuration",
-      fields: [
-        { label: "Device ID", value: MOCK.user.id, type: "text" },
-        {
-          label: "Hardware API URL",
-          value: "http://192.168.1.100/data",
-          type: "text",
-        },
-        { label: "Update Interval (sec)", value: "30", type: "number" },
-      ],
-    },
-    {
-      section: "Alert Settings",
-      fields: [
-        { label: "Motion Sensitivity", value: "Medium", type: "text" },
-        { label: "Geofence Radius (m)", value: "200", type: "number" },
-        { label: "Notification Mode", value: "SMS + App", type: "text" },
-      ],
-    },
-    {
-      section: "Profile",
-      fields: [
-        { label: "Full Name", value: MOCK.user.name, type: "text" },
-        { label: "Email", value: "rahim@example.com", type: "email" },
-      ],
-    },
-  ];
+function SettingsPage({ apiData, onLogout }) {
+  const user = apiData?.user;
+  const device = apiData?.devices?.[0];
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
   return (
     <div className="animate-in fade-in duration-300">
       <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-slate-100 mb-4 md:mb-5">
         ⚙️ Settings
       </h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {sections.map((sec) => (
-          <Card
-            key={sec.section}
-            title={sec.section}
-            className="flex flex-col h-full"
-          >
-            <div className="flex-1">
-              {sec.fields.map((f) => (
-                <div key={f.label} className="mb-4 last:mb-0">
-                  <label className="block text-[10px] text-gray-500 mb-1.5 font-semibold">
-                    {f.label}
-                  </label>
-                  <input
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 md:py-2.5 text-slate-200 text-xs md:text-sm focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-colors"
-                    defaultValue={f.value}
-                    type={f.type}
-                  />
-                </div>
-              ))}
+        {/* Device Info */}
+        <Card title="Device Configuration">
+          {[
+            { label: "Device ID", value: device?.id || "No device" },
+            { label: "Device Name", value: device?.name || "—" },
+            {
+              label: "Status",
+              value: device?.is_active ? "Active" : "Inactive",
+            },
+            {
+              label: "Last Seen",
+              value: device?.last_seen
+                ? new Date(device.last_seen).toLocaleString()
+                : "—",
+            },
+          ].map((f) => (
+            <div key={f.label} className="mb-4 last:mb-0">
+              <label className="block text-[10px] text-gray-500 mb-1.5 font-semibold">
+                {f.label}
+              </label>
+              <input
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 md:py-2.5 text-slate-200 text-xs md:text-sm focus:outline-none focus:border-purple-500/50 transition-colors"
+                defaultValue={f.value}
+                readOnly
+              />
             </div>
-            {sec.section === "Profile" && (
-              <div className="mt-5">
-                <ActionBtn color="#6D28D9" className="w-full">
-                  Save Changes
-                </ActionBtn>
+          ))}
+        </Card>
+
+        {/* Profile */}
+        <Card title="Profile" className="flex flex-col h-full">
+          <div className="flex-1">
+            {[
+              { label: "Full Name", value: user?.name || "", key: "name" },
+              { label: "Email", value: user?.email || "", key: "email" },
+              { label: "Phone", value: user?.phone || "", key: "phone" },
+            ].map((f) => (
+              <div key={f.label} className="mb-4 last:mb-0">
+                <label className="block text-[10px] text-gray-500 mb-1.5 font-semibold">
+                  {f.label}
+                </label>
+                <input
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 md:py-2.5 text-slate-200 text-xs md:text-sm focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-colors"
+                  defaultValue={f.value}
+                />
               </div>
-            )}
-          </Card>
-        ))}
+            ))}
+          </div>
+          <div className="mt-5 flex gap-3">
+            <ActionBtn color="#6D28D9" className="flex-1" onClick={handleSave}>
+              {saved ? "✓ Saved!" : "Save Changes"}
+            </ActionBtn>
+            <ActionBtn color="#EF4444" onClick={onLogout}>
+              Logout
+            </ActionBtn>
+          </div>
+        </Card>
       </div>
     </div>
   );
@@ -934,7 +1038,7 @@ const NAV = [
   { id: "overview", icon: Icons.shield, label: "Overview", emoji: "🛡️" },
   { id: "tracking", icon: Icons.map, label: "Tracking", emoji: "🗺️" },
   { id: "health", icon: Icons.heart, label: "Health", emoji: "💓" },
-  { id: "alerts", icon: Icons.bell, label: "Alerts", emoji: "🚨", badge: 1 },
+  { id: "alerts", icon: Icons.bell, label: "Alerts", emoji: "🚨" },
   { id: "history", icon: Icons.route, label: "History", emoji: "🛣️" },
   { id: "zones", icon: Icons.zone, label: "Zones", emoji: "📍" },
   { id: "contacts", icon: Icons.contacts, label: "Contacts", emoji: "📞" },
@@ -944,44 +1048,135 @@ const NAV = [
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const router = useRouter();
   const [page, setPage] = useState("overview");
   const [sosActive, setSosActive] = useState(false);
   const [bpm, setBpm] = useState(72);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile defaults to closed
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Auto-close sidebar on mobile after navigating
-  const handleNavClick = (id) => {
-    setPage(id);
-    if (window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
-  };
+  // ── Real API State ──────────────────────────────────────
+  const [apiData, setApiData] = useState({
+    user: null,
+    devices: [],
+    alerts: [],
+    locations: [],
+    geofences: [],
+    loading: true,
+    error: null,
+  });
 
+  // ── Auth guard + fetch all data ─────────────────────────
   useEffect(() => {
-    // Open sidebar by default on desktop
+    if (!isLoggedIn()) {
+      router.push("/auth/login");
+      return;
+    }
+
+    async function fetchAll() {
+      const [userR, devsR, alertsR, locsR, geosR] = await Promise.allSettled([
+        getMe(),
+        getDevices(),
+        getAlerts(),
+        getLocations(),
+        getGeofences(),
+      ]);
+      const get = (r, key) =>
+        r.status === "fulfilled" ? (r.value?.[key] ?? r.value ?? []) : [];
+      setApiData({
+        user: userR.status === "fulfilled" ? userR.value : null,
+        devices: Array.isArray(devsR.value)
+          ? devsR.value
+          : devsR.value?.results || [],
+        alerts: alertsR.value?.results || alertsR.value || [],
+        locations: locsR.value?.results || locsR.value || [],
+        geofences: geosR.value?.results || geosR.value || [],
+        loading: false,
+        error: null,
+      });
+    }
+    fetchAll();
+  }, []);
+
+  // ── WebSocket real-time updates ─────────────────────────
+  useEffect(() => {
+    if (!apiData.devices.length) return;
+    const ws = connectDeviceSocket(apiData.devices[0].id, {
+      onLocation: (msg) =>
+        setApiData((prev) => ({
+          ...prev,
+          locations: [
+            {
+              latitude: msg.lat,
+              longitude: msg.lon,
+              timestamp: msg.ts,
+              speed: 0,
+            },
+            ...prev.locations,
+          ],
+        })),
+      onAlert: (msg) =>
+        setApiData((prev) => ({
+          ...prev,
+          alerts: [
+            {
+              id: Date.now(),
+              alert_type: msg.alert_type,
+              latitude: msg.lat,
+              longitude: msg.lon,
+              resolved: false,
+              timestamp: new Date().toISOString(),
+            },
+            ...prev.alerts,
+          ],
+        })),
+    });
+    return () => ws.close();
+  }, [apiData.devices.length]);
+
+  // ── BPM simulator (ESP32 heart rate not in API) ─────────
+  useEffect(() => {
     if (window.innerWidth >= 768) setSidebarOpen(true);
-
-    const handleResize = () => {
-      if (window.innerWidth >= 768) setSidebarOpen(true);
-      else setSidebarOpen(false);
-    };
-    window.addEventListener("resize", handleResize);
-
-    const t = setInterval(() => {
-      setBpm((prev) =>
-        Math.max(60, Math.min(90, prev + (Math.random() > 0.5 ? 1 : -1))),
-      );
-    }, 2000);
-
+    const onResize = () => setSidebarOpen(window.innerWidth >= 768);
+    window.addEventListener("resize", onResize);
+    const t = setInterval(
+      () =>
+        setBpm((p) =>
+          Math.max(60, Math.min(90, p + (Math.random() > 0.5 ? 1 : -1))),
+        ),
+      2000,
+    );
     return () => {
       clearInterval(t);
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", onResize);
     };
   }, []);
 
+  const handleLogout = () => {
+    logout();
+    router.push("/auth/login");
+  };
+
+  const handleNavClick = (id) => {
+    setPage(id);
+    if (window.innerWidth < 768) setSidebarOpen(false);
+  };
+
   const currentNav = NAV.find((n) => n.id === page);
+  const firstDevice = apiData.devices[0];
+  const batteryPct = firstDevice?.battery_pct ?? 78;
+  const deviceStatus = firstDevice?.is_active ? "SAFE" : "OFFLINE";
+  const statusColor = firstDevice?.is_active ? "#22C55E" : "#EF4444";
+  const unresolvedAlerts = apiData.alerts.filter((a) => !a.resolved).length;
+
+  // NAV with live badge
+  const navWithBadge = NAV.map((n) =>
+    n.id === "alerts" && unresolvedAlerts > 0
+      ? { ...n, badge: unresolvedAlerts }
+      : n,
+  );
 
   const renderPage = () => {
+    if (apiData.loading) return <Loader />;
     switch (page) {
       case "overview":
         return (
@@ -989,24 +1184,25 @@ export default function App() {
             bpm={bpm}
             sosActive={sosActive}
             setSosActive={setSosActive}
+            apiData={apiData}
           />
         );
       case "tracking":
-        return <TrackingPage />;
+        return <TrackingPage apiData={apiData} />;
       case "health":
         return <HealthPage bpm={bpm} />;
       case "alerts":
-        return <AlertsPage />;
+        return <AlertsPage apiData={apiData} setApiData={setApiData} />;
       case "history":
-        return <HistoryPage />;
+        return <HistoryPage apiData={apiData} />;
       case "zones":
-        return <ZonesPage />;
+        return <ZonesPage apiData={apiData} setApiData={setApiData} />;
       case "contacts":
-        return <ContactsPage />;
+        return <ContactsPage apiData={apiData} />;
       case "reports":
-        return <ReportsPage />;
+        return <ReportsPage apiData={apiData} />;
       case "settings":
-        return <SettingsPage />;
+        return <SettingsPage apiData={apiData} onLogout={handleLogout} />;
       default:
         return null;
     }
@@ -1014,31 +1210,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white font-sans flex overflow-hidden">
-      {/* ── MOBILE OVERLAY ── */}
+      {/* Mobile overlay */}
       <div
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* ── SIDEBAR ── */}
+      {/* Sidebar */}
       <div
-        className={`fixed md:relative top-0 left-0 h-full z-50 bg-[#080E18] border-r border-white/5 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0
-          ${sidebarOpen ? "translate-x-0 w-[240px]" : "-translate-x-full md:translate-x-0 md:w-[72px]"}
-        `}
+        className={`fixed md:relative top-0 left-0 h-full z-50 bg-[#080E18] border-r border-white/5 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0 ${sidebarOpen ? "translate-x-0 w-[240px]" : "-translate-x-full md:translate-x-0 md:w-[72px]"}`}
       >
-        {/* Sidebar Header */}
+        {/* Logo */}
         <div className="h-16 border-b border-white/5 flex items-center px-4 gap-3 shrink-0">
           <div className="w-9 h-9 rounded-xl shrink-0 bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-lg">
             🛡️
           </div>
           {sidebarOpen && (
             <span className="font-black text-base tracking-tight whitespace-nowrap bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent animate-in fade-in">
-              SafeGuard
+              Nirapod
             </span>
           )}
         </div>
 
-        {/* Toggle Button (Desktop only, absolutely positioned outside) */}
+        {/* Toggle (desktop) */}
         <button
           onClick={() => setSidebarOpen((o) => !o)}
           className="hidden md:flex absolute top-5 -right-3 w-6 h-6 bg-gray-800 border border-white/10 rounded-full items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors z-50 shadow-lg"
@@ -1046,47 +1240,61 @@ export default function App() {
           <Icon d={sidebarOpen ? Icons.chevron : Icons.menu} size={11} />
         </button>
 
-        {/* Nav Items */}
+        {/* Nav */}
         <nav className="flex-1 py-4 px-3 overflow-y-auto hide-scrollbar space-y-1">
-          {NAV.map((n) => {
+          {navWithBadge.map((n) => {
             const active = page === n.id;
             return (
               <button
                 key={n.id}
                 onClick={() => handleNavClick(n.id)}
                 title={!sidebarOpen ? n.label : undefined}
-                className={`w-full flex items-center gap-3 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200
-                  ${sidebarOpen ? "px-3 justify-start" : "px-0 justify-center"}
-                  ${active ? "bg-purple-600/15 border border-purple-500/30 text-purple-400" : "border border-transparent text-gray-500 hover:bg-white/5 hover:text-gray-300"}
-                `}
+                className={`w-full flex items-center gap-3 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 relative ${sidebarOpen ? "px-3 justify-start" : "px-0 justify-center"} ${active ? "bg-purple-600/15 border border-purple-500/30 text-purple-400" : "border border-transparent text-gray-500 hover:bg-white/5 hover:text-gray-300"}`}
               >
                 <Icon
                   d={n.icon}
                   size={16}
                   color={active ? "#A78BFA" : "currentColor"}
                 />
-
                 {sidebarOpen && (
                   <span className="animate-in fade-in">{n.label}</span>
                 )}
-
                 {sidebarOpen && n.badge && (
                   <span className="ml-auto bg-red-500 text-white rounded-md text-[9px] px-1.5 py-0.5 font-bold animate-in fade-in">
                     {n.badge}
                   </span>
                 )}
                 {!sidebarOpen && n.badge && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#080E18]"></span>
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#080E18]" />
                 )}
               </button>
             );
           })}
         </nav>
+
+        {/* User info at bottom */}
+        {sidebarOpen && apiData.user && (
+          <div className="p-3 border-t border-white/5">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-purple-600/20 border border-purple-600/30 flex items-center justify-center text-xs">
+                👤
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold text-slate-300 truncate">
+                  {apiData.user.name || apiData.user.email}
+                </div>
+                <div className="text-[9px] text-gray-500 truncate">
+                  {apiData.user.email}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── MAIN CONTENT ── */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        {/* Top Bar */}
+        {/* Header */}
         <header className="h-16 bg-[#080E18]/80 backdrop-blur-md border-b border-white/5 px-4 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div className="flex items-center gap-3 md:gap-4">
             <button
@@ -1107,12 +1315,8 @@ export default function App() {
 
           <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar mask-edges pl-4">
             {[
-              { label: "SAFE", color: "#22C55E", dot: true, hideMobile: false },
-              {
-                label: `🔋 ${MOCK.device.battery}%`,
-                color: "#60A5FA",
-                hideMobile: false,
-              },
+              { label: deviceStatus, color: statusColor, dot: true },
+              { label: `🔋 ${batteryPct}%`, color: "#60A5FA" },
               { label: "📡 Strong", color: "#A78BFA", hideMobile: true },
             ].map((c) => (
               <div
@@ -1136,15 +1340,14 @@ export default function App() {
           </div>
         </header>
 
-        {/* Scrollable Page Content */}
+        {/* Page */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="max-w-5xl mx-auto w-full">{renderPage()}</div>
         </main>
 
-        {/* Footer */}
         <footer className="bg-[#080E18] border-t border-white/5 py-2 px-4 md:px-6 flex flex-col sm:flex-row justify-between items-center shrink-0 gap-1 sm:gap-0">
           <span className="text-[9px] md:text-[10px] text-gray-600 font-mono tracking-tight">
-            SafeGuard v2.1 · BPI Final Year Project
+            Nirapod v1.0 · Child Safety Alert System
           </span>
           <span className="text-[9px] md:text-[10px] text-gray-600 font-mono tracking-tight">
             ESP32 · NEO-6M · SIM800L
@@ -1152,13 +1355,12 @@ export default function App() {
         </footer>
       </div>
 
-      {/* Global CSS overrides for hiding scrollbars neatly */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .mask-edges { -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent); mask-image: linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent); }
+        .mask-edges { -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent); }
       `,
         }}
       />
