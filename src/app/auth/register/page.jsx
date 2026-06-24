@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { register, login, isLoggedIn } from "@/lib/api";
+import { validatePhone } from "@/lib/validation";
 
 const Icon = ({ d, size = 18, color = "currentColor" }) => (
   <svg
@@ -92,6 +93,11 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!form.name || !form.email || !form.phone || !form.password) {
       setError("Please fill in all fields.");
+      return;
+    }
+    const phoneErr = validatePhone(form.phone);
+    if (phoneErr) {
+      setError(phoneErr);
       return;
     }
     if (form.password !== form.confirm) {

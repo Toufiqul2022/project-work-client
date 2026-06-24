@@ -162,8 +162,22 @@ export async function updateMe(payload) {
 }
 
 // Partial profile update — only send fields you want to change
+// NOTE: the deployed backend's /me/ is read-only (GET only) — PATCH /me returns
+// 405. Self-updates must go through the by-id route; prefer patchUser() below.
 export async function patchMe(payload) {
   const res = await apiFetch("/api/auth/users/me/", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw data;
+  return data;
+}
+
+// Partial update of a user by UUID — used for profile edits since /me/ is
+// read-only on this backend. The authenticated owner may PATCH their own record.
+export async function patchUser(id, payload) {
+  const res = await apiFetch(`/api/auth/users/${id}/`, {
     method: "PATCH",
     body: JSON.stringify(payload),
   });

@@ -19,7 +19,7 @@ Goal: find every place the frontend calls the backend API **incorrectly**, plus 
 | 6 | 🟡 Low | Reports page | Uses alert type `ANOMALY` which does not exist (valid: `PANIC`/`GEOFENCE`/`MOTION`) — **✅ FIXED** |
 | 7 | 🟡 Low | Dashboard WS | Reads `msg.speed` / `msg.accuracy` from the location WebSocket payload, which the doc does not send — **✅ FIXED** |
 | 8 | 🟡 Low | Tracking page | Manual refresh sets global `loading=true`, replacing the whole page with a spinner — **✅ FIXED** |
-| 10 | 🔴 High | Settings profile update | Save shows a generic error and hides the real backend reason; `ActionBtn` drops `type` (Logout submits the form); empty `phone` is sent → 400 — **✅ FIXED** |
+| 10 | 🔴 High | Settings profile update | `PATCH /api/auth/users/me/` → **405** (deployed `/me/` is read-only); must update via `PATCH /api/auth/users/{id}/`. Also: generic error hid the cause, `ActionBtn` dropped `type`, empty `phone` sent — **✅ FIXED** |
 | 9 | ℹ️ Note | Devices | `registerDevice()` exists in `api.js` but there is **no UI** to register a device; settings is read-only (out of scope) |
 
 ---
@@ -140,9 +140,17 @@ const alertColor = (type) =>
 **Symptom (user-confirmed):** clicking **Save Configurations** on the Settings page shows the red error
 toast; the profile is not updated.
 
-**Flow:** `settings/page.jsx` `handleSave` → `patchMe({ name, phone })` (`src/lib/api.js`) →
-`PATCH /api/auth/users/me/` with `Authorization: JWT <token>`. The request *is* firing (the error toast
-proves the form submits and the backend returns non-2xx), but three problems combine:
+**ROOT CAUSE (confirmed against the live backend):** `PATCH /api/auth/users/me/` returns
+**`405 Method Not Allowed`**. An `OPTIONS` probe shows the deployed `/me/` endpoint allows only
+`GET, HEAD, OPTIONS` — it is **read-only**, despite the doc listing PUT/PATCH/DELETE. The by-id route
+`/api/auth/users/{id}/` **does** allow `GET, PUT, PATCH, DELETE`. **Fix:** update the profile via
+`patchUser(user.id, …)` → `PATCH /api/auth/users/{id}/` (the authenticated owner may patch their own
+record). New helper `patchUser()` added to `src/lib/api.js`; `settings/page.jsx` now uses it with the
+UUID from `getMe()`.
+
+**Flow:** `settings/page.jsx` `handleSave` → `patchUser(user.id, { name, phone })` (`src/lib/api.js`) →
+`PATCH /api/auth/users/{id}/` with `Authorization: JWT <token>`. Three further problems were also
+fixed along the way:
 
 1. **Real error swallowed** — `src/app/dashboard/settings/page.jsx` `handleSave` `catch` discarded `err`
    and showed a fixed string, so the actual cause (`{ phone: [...] }`, `{ detail: ... }`, etc.) was

@@ -2,11 +2,14 @@
 // app/dashboard/settings/page.jsx
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getMe, getDevices, patchMe, logout } from "@/lib/api"; // patchMe এপিআই মেথড যুক্ত করা হয়েছে
+import { getMe, getDevices, patchUser, logout } from "@/lib/api"; // patchMe এপিআই মেথড যুক্ত করা হয়েছে
 import { Card, ActionBtn } from "../shared";
+import { useDashboard } from "../dashboard-context"; // সাইডবার ইন্সট্যান্ট আপডেটের জন্য শেয়ার্ড কনটেক্সট
+import { validatePhone } from "@/lib/validation";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { setUser: setSharedUser } = useDashboard(); // লেআউট সাইডবারের ইউজার স্টেট সিঙ্ক
   const [user, setUser] = useState(null);
   const [device, setDevice] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -60,16 +63,26 @@ export default function SettingsPage() {
       showToast("❌ Full name is required.", "error");
       return;
     }
-    if (!phone) {
-      showToast("❌ Guardian phone number is required.", "error");
+    const phoneErr = validatePhone(phone);
+    if (phoneErr) {
+      showToast(`❌ ${phoneErr}`, "error");
+      return;
+    }
+    if (!user?.id) {
+      showToast("❌ Profile not loaded yet. Please retry.", "error");
       return;
     }
 
     setSaving(true);
     try {
-      // patchMe ফাংশনের মাধ্যমে ব্যাকএন্ডে রিয়েল ডাটা আপডেট
-      const updatedUser = await patchMe({ name, phone });
+      // /me/ এই ব্যাকএন্ডে রিড-অনলি (PATCH → 405), তাই নিজের UUID দিয়ে আপডেট
+      const updatedUser = await patchUser(user.id, { name, phone });
       setUser(updatedUser);
+      setSharedUser(updatedUser); // সাইডবার/হেডার তাৎক্ষণিক আপডেট
+      // Notify the global Navbar (outside the dashboard context) to refresh instantly
+      window.dispatchEvent(
+        new CustomEvent("nirapod:profile-updated", { detail: updatedUser }),
+      );
       showToast("✅ Profile configurations updated successfully.");
     } catch (err) {
       // ব্যাকএন্ডের আসল এরর সারফেস করা হচ্ছে (login/register পেজের মতো)

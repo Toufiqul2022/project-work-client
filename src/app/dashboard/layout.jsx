@@ -11,6 +11,7 @@ import {
   getLatestLocation,
 } from "@/lib/api"; // এক্সিস্টিং সেন্ট্রাল এপিআই লেয়ার
 import { Icon, Icons } from "./shared"; // গ্লোবাল শেয়ার্ড আইকনসেট
+import { DashboardContext } from "./dashboard-context"; // শেয়ার্ড ইউজার স্টেট কনটেক্সট
 
 const NAV = [
   {
@@ -134,6 +135,13 @@ export default function DashboardLayout({ children }) {
     if (window.innerWidth < 768) setSidebarOpen(false);
   };
 
+  // Child pages (Settings) push profile updates here so the sidebar reflects them instantly
+  const setUser = (u) =>
+    setHeaderData((p) => ({
+      ...p,
+      user: typeof u === "function" ? u(p.user) : u,
+    }));
+
   const { device, latestLoc, unresolvedAlerts, user } = headerData;
   const deviceStatus = device?.is_active ? "SAFE" : "OFFLINE";
   const statusColor = device?.is_active ? "#22C55E" : "#EF4444";
@@ -146,6 +154,7 @@ export default function DashboardLayout({ children }) {
   ); // একটিভ রাউট ডিটেকশন ট্র্যাকার
 
   return (
+    <DashboardContext.Provider value={{ user, setUser }}>
     <div className="min-h-screen w-full bg-[#030712] text-white font-sans flex relative overflow-x-hidden">
       {/* Mobile Sidebar Back-drop Overlay */}
       <div
@@ -330,5 +339,6 @@ export default function DashboardLayout({ children }) {
         }}
       />
     </div>
+    </DashboardContext.Provider>
   );
 }

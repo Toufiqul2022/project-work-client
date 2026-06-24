@@ -13,6 +13,17 @@ import {
 } from "@/lib/api";
 import { Card, Badge, ActionBtn, LiveMap, Icon, Icons } from "../shared";
 
+// ── OpenStreetMap (Leaflet) click-to-pick centre point for a geofence ─────────
+// Whole component is client-only — Leaflet's `useMapEvents` hook touches `window`.
+const MapPicker = dynamic(() => import("./ZoneMapPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-48 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs text-gray-500 font-mono">
+      🗺️ Loading map…
+    </div>
+  ),
+});
+
 // ── Leaflet Core Component Layer Dynamically Loaded (No-SSR) ──────────────────
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
@@ -188,10 +199,16 @@ function ZoneForm({
   title,
 }) {
   const [form, setForm] = useState({ ...EMPTY, ...initial });
+  const [pickError, setPickError] = useState(null);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handle = (e) => {
     e.preventDefault();
+    if (!form.latitude || !form.longitude) {
+      setPickError("Please click the map to set a location first.");
+      return;
+    }
+    setPickError(null);
     onSubmit({
       ...form,
       latitude: parseFloat(form.latitude),
@@ -250,31 +267,42 @@ function ZoneForm({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={LabelClass}>Latitude</label>
-            <input
-              className={InputClass}
-              type="number"
-              step="any"
-              placeholder="23.8103"
-              value={form.latitude}
-              onChange={(e) => set("latitude", e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className={LabelClass}>Longitude</label>
-            <input
-              className={InputClass}
-              type="number"
-              step="any"
-              placeholder="90.4125"
-              value={form.longitude}
-              onChange={(e) => set("longitude", e.target.value)}
-              required
-            />
-          </div>
+        {/* Location — OpenStreetMap click-to-pin picker */}
+        <div>
+          <label className={LabelClass}>
+            Location
+            <span className="ml-2 normal-case font-normal text-gray-600">
+              — click map to pin centre point
+            </span>
+          </label>
+
+          <MapPicker
+            lat={form.latitude}
+            lng={form.longitude}
+            radius={form.radius_m}
+            onPick={(lat, lng) => {
+              set("latitude", lat.toFixed(6));
+              set("longitude", lng.toFixed(6));
+              setPickError(null);
+            }}
+          />
+          {/* Read-only coordinate display below the map */}
+          {form.latitude && form.longitude ? (
+            <div className="mt-1.5 text-[10px] font-mono text-gray-500 text-center">
+              📍 {parseFloat(form.latitude).toFixed(5)}°N ·{" "}
+              {parseFloat(form.longitude).toFixed(5)}°E
+            </div>
+          ) : (
+            <div className="mt-1.5 text-[10px] text-gray-600 text-center">
+              Tap anywhere on the map to place the zone centre
+            </div>
+          )}
+
+          {pickError && (
+            <div className="text-[10px] text-red-400 font-semibold mt-1 text-center">
+              {pickError}
+            </div>
+          )}
         </div>
 
         <div>

@@ -101,6 +101,22 @@ export default function Navbar() {
       .catch(() => setUserInfo({ name: null, email: null, loading: false }));
   }, []);
 
+  // Instantly reflect profile edits made on the Settings page
+  useEffect(() => {
+    const onProfileUpdate = (e) => {
+      const u = e.detail;
+      if (!u) return;
+      setUserInfo({
+        name: u.name || u.email?.split("@")[0] || null,
+        email: u.email || null,
+        loading: false,
+      });
+    };
+    window.addEventListener("nirapod:profile-updated", onProfileUpdate);
+    return () =>
+      window.removeEventListener("nirapod:profile-updated", onProfileUpdate);
+  }, []);
+
   const handleLogout = () => {
     logout();
     setUserMenuOpen(false);
@@ -110,8 +126,8 @@ export default function Navbar() {
 
   // Safe checks using mount state
   const loggedIn = isMounted && isLoggedIn();
-  const isAuthPage = pathname?.startsWith("/auth");
-  const displayLinks = isAuthPage ? AUTH_NAV_LINKS : NAV_LINKS;
+  // Dashboard link only for authenticated users; everyone else gets the 4 public links
+  const displayLinks = loggedIn ? NAV_LINKS : AUTH_NAV_LINKS;
   const isActive = (href) =>
     href === "/" ? pathname === "/" : pathname?.startsWith(href);
 
@@ -169,8 +185,8 @@ export default function Navbar() {
 
           {/* RIGHT SIDE ACTIONS */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Auth Page: Login / Signup CTAs */}
-            {isAuthPage && (
+            {/* Logged-out: Login / Signup CTAs (shown on all non-authenticated pages) */}
+            {!loggedIn && (
               <div className="hidden md:flex items-center gap-2">
                 <Link
                   href="/auth/login"
@@ -188,7 +204,7 @@ export default function Navbar() {
             )}
 
             {/* Authenticated State: Bell + User Dropdown */}
-            {!isAuthPage && loggedIn && (
+            {loggedIn && (
               <>
                 {/* Notification Bell */}
                 <button
