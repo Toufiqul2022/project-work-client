@@ -82,8 +82,10 @@ export const ActionBtn = ({
   className = "",
   onClick,
   disabled,
+  type = "button",
 }) => (
   <button
+    type={type}
     onClick={onClick}
     disabled={disabled}
     className={`px-3 py-2 md:px-4 md:py-2 rounded-xl text-white font-bold text-[10px] md:text-xs transition-all hover:brightness-110 flex-shrink-0 disabled:opacity-40 ${className}`}

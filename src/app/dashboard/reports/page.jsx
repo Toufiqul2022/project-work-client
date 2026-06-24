@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { getAlerts, getLocations } from "@/lib/api"; // রিয়েল ডাটা এপিআই কানেকশন
 import { Card, Badge } from "../shared"; // গ্লোবাল শেয়ার্ড কম্পোনেন্ট
+import { formatKmh } from "@/lib/format"; // m/s → km/h কনভার্সন হেল্পার
 
 const alertColor = (type) =>
-  ({ PANIC: "#EF4444", GEOFENCE: "#F59E0B", ANOMALY: "#8B5CF6" })[type] ||
-  "#60A5FA"; // অ্যালার্ট সিগনেচার কালার ম্যাট্রিক্স
+  ({ PANIC: "#EF4444", GEOFENCE: "#F59E0B", MOTION: "#8B5CF6" })[type] ||
+  "#60A5FA"; // অ্যালার্ট সিগনেচার কালার ম্যাট্রিক্স (PANIC / GEOFENCE / MOTION)
 
 export default function ReportsPage() {
   const [alerts, setAlerts] = useState([]);
@@ -136,9 +137,7 @@ export default function ReportsPage() {
                         {parseFloat(loc.longitude).toFixed(6)}°E
                       </td>
                       <td className="py-3 pr-4 text-emerald-400 font-semibold font-mono">
-                        {loc.speed != null
-                          ? `${parseFloat(loc.speed).toFixed(1)} km/h`
-                          : "0.0 km/h"}
+                        {formatKmh(loc.speed, { fallback: "0.0 km/h" })}
                       </td>
                       <td className="py-3 text-purple-400 font-mono">
                         {loc.accuracy != null ? `±${loc.accuracy}m` : "—"}

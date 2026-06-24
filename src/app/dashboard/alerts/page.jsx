@@ -1,51 +1,17 @@
 "use client";
 // app/dashboard/alerts/page.jsx
 import { useState, useEffect, useCallback } from "react";
+// Central API layer — JWT injection + auto-refresh on 401 (shared across app)
+import { getAlerts, getAlert, resolveAlert } from "@/lib/api";
 
-// ─── API helpers ────────────────────────────────────────────────────────────
-const BASE =
-  process.env.NEXT_PUBLIC_API_URL || "https://nirapod-backend.onrender.com";
-
-async function apiFetch(path, options = {}) {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  const res = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `JWT ${token}` } : {}),
-      ...options.headers,
-    },
-  });
-  if (!res.ok) {
-    let errData;
-    try {
-      errData = await res.json();
-    } catch {
-      errData = { detail: `HTTP ${res.status}` };
-    }
-    throw errData;
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : {};
-}
-
+// Empty filter strings mean "All" → pass undefined so no query param is sent
 function fetchAlerts({ device, resolved, alert_type, page = 1 } = {}) {
-  const params = new URLSearchParams();
-  if (device) params.set("device", device);
-  if (resolved !== undefined && resolved !== "")
-    params.set("resolved", resolved);
-  if (alert_type) params.set("alert_type", alert_type);
-  params.set("page", page);
-  return apiFetch(`/api/alerts/?${params.toString()}`);
-}
-
-function fetchAlert(id) {
-  return apiFetch(`/api/alerts/${id}/`);
-}
-
-function resolveAlertApi(id) {
-  return apiFetch(`/api/alerts/${id}/resolve/`, { method: "PUT" });
+  return getAlerts({
+    device: device || undefined,
+    resolved: resolved === "" || resolved === undefined ? undefined : resolved,
+    alert_type: alert_type || undefined,
+    page,
+  });
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -398,7 +364,7 @@ export default function AlertsPage() {
     setResolving(id);
     setResolveError(null);
     try {
-      await resolveAlertApi(id);
+      await resolveAlert(id);
       setAlerts((prev) =>
         prev.map((a) => (a.id === id ? { ...a, resolved: true } : a)),
       );
@@ -416,7 +382,7 @@ export default function AlertsPage() {
     const existing = alerts.find((a) => a.id === id);
     if (existing) setDetailAlert(existing);
     try {
-      const full = await fetchAlert(id);
+      const full = await getAlert(id);
       setDetailAlert(full);
     } catch {
       // keep row payload fallback

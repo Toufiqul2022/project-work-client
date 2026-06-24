@@ -7,6 +7,7 @@ import {
   getDeviceLocations,
   connectDeviceSocket,
 } from "@/lib/api";
+import { formatKmh } from "@/lib/format";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const fmt = (v, decimals = 6) =>
@@ -289,6 +290,7 @@ export default function TrackingPage() {
     locationCount: 0,
     wsStatus: "disconnected", // disconnected | connecting | live
     loading: true,
+    refreshing: false,
     lastRefreshed: null,
     error: null,
   });
@@ -376,17 +378,18 @@ export default function TrackingPage() {
   const handleManualRefresh = async () => {
     const { device } = state;
     if (!device) return;
-    setState((p) => ({ ...p, loading: true }));
+    // Use a dedicated flag so we don't unmount the whole page (loading) on refresh
+    setState((p) => ({ ...p, refreshing: true }));
     try {
       const location = await getLatestLocation(device.id);
       setState((p) => ({
         ...p,
         location,
-        loading: false,
+        refreshing: false,
         lastRefreshed: new Date(),
       }));
     } catch {
-      setState((p) => ({ ...p, loading: false }));
+      setState((p) => ({ ...p, refreshing: false }));
     }
   };
 
@@ -444,6 +447,7 @@ export default function TrackingPage() {
     locationCount,
     wsStatus,
     lastRefreshed,
+    refreshing,
   } = state;
   const isLive = wsStatus === "live";
 
@@ -487,6 +491,7 @@ export default function TrackingPage() {
           <StatusDot live={isLive} />
           <button
             onClick={handleManualRefresh}
+            disabled={refreshing}
             style={{
               display: "flex",
               alignItems: "center",
@@ -498,11 +503,12 @@ export default function TrackingPage() {
               color: "#94a3b8",
               fontSize: 11,
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: refreshing ? "wait" : "pointer",
+              opacity: refreshing ? 0.6 : 1,
               letterSpacing: "0.04em",
             }}
           >
-            ↻ Refresh
+            {refreshing ? "↻ Refreshing…" : "↻ Refresh"}
           </button>
         </div>
       </div>
@@ -545,11 +551,7 @@ export default function TrackingPage() {
           label="Speed"
           color="#22c55e"
           glow
-          value={
-            loc?.speed != null
-              ? `${parseFloat(loc.speed).toFixed(1)} km/h`
-              : "0 km/h"
-          }
+          value={formatKmh(loc?.speed, { fallback: "0.0 km/h" })}
         />
         <StatPill
           icon="🎯"

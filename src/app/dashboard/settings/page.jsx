@@ -52,17 +52,34 @@ export default function SettingsPage() {
   // রিয়েল ডাটাবেস সাবমিশন কন্ট্রোলার (PATCH Request)
   const handleSave = async (e) => {
     e.preventDefault();
+
+    // ব্যাকএন্ড মডেলে phone রিকোয়ার্ড — খালি phone পাঠালে 400 আসে, তাই আগেই গার্ড
+    const name = profileForm.name.trim();
+    const phone = profileForm.phone.trim();
+    if (!name) {
+      showToast("❌ Full name is required.", "error");
+      return;
+    }
+    if (!phone) {
+      showToast("❌ Guardian phone number is required.", "error");
+      return;
+    }
+
     setSaving(true);
     try {
       // patchMe ফাংশনের মাধ্যমে ব্যাকএন্ডে রিয়েল ডাটা আপডেট
-      const updatedUser = await patchMe({
-        name: profileForm.name,
-        phone: profileForm.phone,
-      });
+      const updatedUser = await patchMe({ name, phone });
       setUser(updatedUser);
       showToast("✅ Profile configurations updated successfully.");
     } catch (err) {
-      showToast("❌ Failed to commit database configurations.", "error");
+      // ব্যাকএন্ডের আসল এরর সারফেস করা হচ্ছে (login/register পেজের মতো)
+      const msg =
+        err?.detail ||
+        err?.phone?.[0] ||
+        err?.name?.[0] ||
+        Object.values(err || {})?.[0]?.[0] ||
+        "Failed to update profile.";
+      showToast(`❌ ${msg}`, "error");
     } finally {
       setSaving(false);
     }
@@ -190,12 +207,14 @@ export default function SettingsPage() {
                     Guardian SOS Phone Number
                   </label>
                   <input
-                    type="text"
+                    type="tel"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 md:py-2.5 text-slate-200 text-xs md:text-sm focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-colors"
                     value={profileForm.phone}
                     onChange={(e) =>
                       setProfileForm({ ...profileForm, phone: e.target.value })
                     }
+                    placeholder="01XXXXXXXXX"
+                    required
                   />
                 </div>
               </div>

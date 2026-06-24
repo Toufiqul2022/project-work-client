@@ -25,6 +25,8 @@ const Icons = {
   mail: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6",
   lock: "M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z M7 11V7a5 5 0 0110 0v4",
   user: "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2 M12 11a4 4 0 100-8 4 4 0 000 8z",
+  phone:
+    "M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z",
   eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 100 6 3 3 0 000-6z",
   eyeOff:
     "M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24 M1 1l22 22",
@@ -40,6 +42,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirm: "",
   });
@@ -87,7 +90,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password) {
+    if (!form.name || !form.email || !form.phone || !form.password) {
       setError("Please fill in all fields.");
       return;
     }
@@ -105,6 +108,7 @@ export default function RegisterPage() {
       await register({
         name: form.name,
         email: form.email,
+        phone: form.phone,
         password: form.password,
       });
       // Auto-login after registration
@@ -216,6 +220,29 @@ export default function RegisterPage() {
                   className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-200 placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:bg-white/[0.08] transition-all"
                 />
               </div>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+                Phone Number
+              </label>
+              <div className="relative">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none">
+                  <Icon d={Icons.phone} size={15} />
+                </div>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="01XXXXXXXXX"
+                  autoComplete="tel"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-200 placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:bg-white/[0.08] transition-all"
+                />
+              </div>
+              <p className="text-[10px] text-gray-600 mt-1.5">
+                Used to send SMS safety alerts.
+              </p>
             </div>
 
             {/* Password */}

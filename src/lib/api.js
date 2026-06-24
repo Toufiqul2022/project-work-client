@@ -223,11 +223,15 @@ export async function confirmPasswordReset({ uid, token, new_password }) {
 // AUTH — 4. Email Management
 // ════════════════════════════════════════════════════════
 
-// Change email address; requires current password for verification
+// Change email address; requires current password + re_new_email confirmation
 export async function changeEmail({ current_password, new_email }) {
   const res = await apiFetch("/api/auth/users/set_email/", {
     method: "POST",
-    body: JSON.stringify({ current_password, new_email }),
+    body: JSON.stringify({
+      current_password,
+      new_email,
+      re_new_email: new_email,
+    }),
   });
   if (res.status !== 204 && !res.ok) throw await res.json();
   return true;
@@ -243,12 +247,16 @@ export async function requestEmailReset(email) {
   return true;
 }
 
-// Confirm email change using the new_email token from the link
-export async function confirmEmailReset(new_email) {
-  const res = await apiFetch("/api/auth/users/reset_email_confirm/", {
-    method: "POST",
-    body: JSON.stringify({ new_email }),
-  });
+// Confirm email change using the uid + token from the reset email
+export async function confirmEmailReset({ uid, token, new_email }) {
+  const res = await apiFetch(
+    "/api/auth/users/reset_email_confirm/",
+    {
+      method: "POST",
+      body: JSON.stringify({ uid, token, new_email }),
+    },
+    false
+  );
   if (res.status !== 204 && !res.ok) throw await res.json();
   return true;
 }

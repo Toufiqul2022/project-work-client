@@ -8,6 +8,7 @@ import {
   getGeofences,
   getAlerts,
 } from "@/lib/api";
+import { toKmh, formatKmh } from "@/lib/format";
 
 // ── Haversine & Formatting Helpers ──────────────────────────────────────────
 const haversine = (lat1, lon1, lat2, lon2) => {
@@ -378,7 +379,7 @@ export default function IntegratedHistoryPage() {
               />
               <StatCard
                 label="Average Velocity"
-                value={`${avgSpeed.toFixed(1)} km/h`}
+                value={`${(toKmh(avgSpeed) ?? 0).toFixed(1)} km/h`}
                 color="#a78bfa"
               />
             </div>
@@ -416,7 +417,7 @@ export default function IntegratedHistoryPage() {
                       </div>
                       <div className="flex gap-2 mt-1 text-[9px] font-bold">
                         <span className="text-blue-400 font-mono">
-                          ⚡ {parseFloat(loc.speed || 0).toFixed(1)} km/h
+                          ⚡ {formatKmh(loc.speed, { fallback: "0.0 km/h" })}
                         </span>
                         <span className="text-purple-400 font-mono">
                           🎯 ±{loc.accuracy || 30}m

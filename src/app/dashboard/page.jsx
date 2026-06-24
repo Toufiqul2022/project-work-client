@@ -12,6 +12,7 @@ import {
   connectDeviceSocket,
 } from "@/lib/api";
 import { Card, ListItem, Icon, Icons } from "./shared";
+import { formatKmh } from "@/lib/format";
 
 // ── Leaflet Components Dynamically Loaded ───────────────────────────────────
 // সার্ভার সাইডে window অবজেক্ট না থাকায় Leaflet ম্যাপকে Client-only করা হয়েছে
@@ -185,21 +186,22 @@ export default function OverviewPage() {
   useEffect(() => {
     if (!data.devices[0]) return;
     const ws = connectDeviceSocket(data.devices[0].id, {
-      onLocation: (msg) => {
-        const loc = {
-          latitude: msg.lat,
-          longitude: msg.lon,
-          timestamp: msg.ts,
-          speed: msg.speed || 0,
-          accuracy: msg.accuracy || 30,
-        };
-        setData((p) => ({
-          ...p,
-          latestLocation: loc,
-          locations: [loc, ...p.locations],
-          locationCount: p.locationCount + 1,
-        }));
-      },
+      onLocation: (msg) =>
+        // WS location payload only carries lat/lon/ts — keep last known speed/accuracy
+        setData((p) => {
+          const loc = {
+            ...p.latestLocation,
+            latitude: msg.lat,
+            longitude: msg.lon,
+            timestamp: msg.ts,
+          };
+          return {
+            ...p,
+            latestLocation: loc,
+            locations: [loc, ...p.locations],
+            locationCount: p.locationCount + 1,
+          };
+        }),
       onAlert: (msg) =>
         setData((p) => ({
           ...p,
@@ -318,7 +320,7 @@ export default function OverviewPage() {
             {loc?.speed != null && (
               <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-300">
                 <Icon d={Icons.navigate} size={10} color="#60A5FA" />
-                {loc.speed} km/h
+                {formatKmh(loc.speed)}
               </div>
             )}
             {loc?.accuracy != null && (
@@ -351,7 +353,7 @@ export default function OverviewPage() {
           />
           <ListItem
             label="Current Speed"
-            value={loc?.speed != null ? `${loc.speed} km/h` : "—"}
+            value={loc?.speed != null ? formatKmh(loc.speed) : "—"}
           />
           <ListItem
             label="GPS Accuracy"
